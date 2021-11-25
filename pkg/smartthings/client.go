@@ -3,7 +3,6 @@ package smartthings
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/google/uuid"
@@ -55,13 +54,13 @@ func (c Client) DeviceStatus(deviceID uuid.UUID) (status DeviceStatus, err error
 func (c Client) DeviceCapabilityStatus(deviceID uuid.UUID, componentId string, capabilityId string) (status map[string]interface{}, err error) {
 	url := "/devices/" + deviceID.String() + "/components/" + componentId + "/capabilities/" + capabilityId + "/status"
 
-	log.Printf("Endpoing is '%s'", url)
+	// log.Printf("Endpoing is '%s'", url)
 	data, err := c.get(url)
 	if err != nil {
 		return
 	}
 
-	log.Printf(string(data))
+	// log.Printf(string(data))
 	err = json.Unmarshal([]byte(data), &status)
 	return status, err
 }

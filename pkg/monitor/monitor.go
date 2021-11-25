@@ -24,6 +24,7 @@ type mondevice struct {
 	device     string
 	component  string
 	capability string
+	last       time.Time
 }
 
 func New(st *smartthings.Client, influx client.HTTPClient, database string, metrics []string, interval int) *Monitor {
@@ -31,8 +32,6 @@ func New(st *smartthings.Client, influx client.HTTPClient, database string, metr
 }
 
 func (mon Monitor) Run() error {
-	// devicemap := make(map[string][]mondevice)
-
 	devices, err := mon.MonitoringDevices()
 	if err != nil {
 		return fmt.Errorf("could not list devices: %v", err)
@@ -43,7 +42,6 @@ func (mon Monitor) Run() error {
 
 	for _, dev := range devices {
 		log.Printf("Monitoring %s from device %s (%s)", dev.capability, dev.device, dev.id.String())
-		// devicemap[dev.capability] = append(devicemap[dev.capability], dev)
 	}
 
 	for {
@@ -57,7 +55,7 @@ func (mon Monitor) Run() error {
 			continue
 		}
 
-		for _, dev := range devices {
+		for i, dev := range devices {
 			// Get measurement
 			status, err := mon.st.DeviceCapabilityStatus(dev.id, dev.component, dev.capability)
 			if err != nil {
@@ -86,6 +84,10 @@ func (mon Monitor) Run() error {
 					continue
 				}
 
+				if dev.last == t {
+					continue
+				}
+
 				// Create point
 				point, err := client.NewPoint(
 					key,
@@ -106,15 +108,20 @@ func (mon Monitor) Run() error {
 				}
 
 				bp.AddPoint(point)
+				devices[i].last = t
 			}
 		}
 
-		// Record points
-		err = mon.influx.Write(bp)
-		if err != nil {
-			log.Printf("Error writing point: %v", err)
+		if len(bp.Points()) > 0 {
+			// Record points
+			err = mon.influx.Write(bp)
+			if err != nil {
+				log.Printf("Error writing point: %v", err)
+			} else {
+				log.Printf("Record saved %v", bp)
+			}
 		} else {
-			log.Printf("Record saved %v", bp)
+			log.Printf("No new read since last update")
 		}
 
 		time.Sleep(time.Duration(mon.interval) * time.Second)
