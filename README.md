@@ -4,7 +4,7 @@ A simple program to bring to Influx your SmartThings data through the SmartThing
 
 ## Getting started
 
-Using Docker and Docker Compose here is a full Grafana, Influx, SmartThings simple getting started, in just 3 steps.
+If you have Docker and Docker Compose, you can use this getting started, in just 3 steps.
 
 - Step 1: Create an SmartThings API token
 
@@ -12,7 +12,7 @@ Go to [SmartThings API Token](https://account.smartthings.com/tokens) page and c
 
 - Step 2: Place the token at the `docker-compose-config.yml` file
 
-- Step 3: Bring the stack up
+- Step 3: Bring the stack up and see your Grafana chart
 
 Run Docker Compose:
 ```
