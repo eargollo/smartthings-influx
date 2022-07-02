@@ -70,7 +70,11 @@ func (mon Monitor) Run() error {
 				}
 
 				log.Printf("Key is %s and value %v", key, val)
-				inner := val.(map[string]interface{})
+				inner, ok := val.(map[string]interface{})
+				if !ok {
+					log.Print("error, type was not interface")
+					continue
+				}
 				// Get timestamp
 				layout := "2006-01-02T15:04:05.000Z"
 				str := inner["timestamp"].(string)
