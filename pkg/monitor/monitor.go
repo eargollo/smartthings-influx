@@ -131,7 +131,7 @@ func (mon Monitor) Run() error {
 		time.Sleep(time.Duration(mon.interval) * time.Second)
 	}
 
-	return nil
+	// return nil
 }
 
 func (mon Monitor) MonitoringDevices() (devices []mondevice, err error) {

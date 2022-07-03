@@ -17,6 +17,7 @@ package cmd
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -52,7 +53,10 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.smartthings-influx.yaml or ./.smartthings-influx.yaml)")
 	rootCmd.PersistentFlags().StringVar(&apiToken, "apitoken", "", "SmartThings api token")
-	viper.BindPFlag("apitoken", rootCmd.PersistentFlags().Lookup("apitoken"))
+	err := viper.BindPFlag("apitoken", rootCmd.PersistentFlags().Lookup("apitoken"))
+	if err != nil {
+		log.Fatalf("Error on binding flag: %v", err)
+	}
 	// rootCmd.MarkPersistentFlagRequired("apitoken")
 }
 
