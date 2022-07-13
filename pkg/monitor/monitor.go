@@ -77,7 +77,11 @@ func (mon Monitor) Run() error {
 				}
 				// Get timestamp
 				layout := "2006-01-02T15:04:05.000Z"
-				str := inner["timestamp"].(string)
+				str, ok := inner["timestamp"].(string)
+				if !ok {
+					log.Print("error, timestatmp was not a string")
+					continue
+				}
 				t, err := time.Parse(layout, str)
 				if err != nil {
 					log.Printf("could not convert timestamp %s: %v", str, err)
