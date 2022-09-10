@@ -10,7 +10,7 @@ If you have Docker and Docker Compose, you get started in just 3 steps.
 
 Go to [SmartThings API Token](https://account.smartthings.com/tokens) page and create a token. Make sure you give full access to devices.
 
-- Step 2: Place the token at the `docker-compose-config.yml` file
+- Step 2: Either place the token at the `docker-compose-config.yml` file or set the APITOKEN environment variable `export APITOKEN=YOUR-TOKEN-HERE`
 
 - Step 3: Bring the stack up and see your Grafana chart
 
@@ -47,3 +47,4 @@ Run the monitor option:
 $ smartthings-influx monitor
 ```
 
+You can always set the APITOKEN environment variable in case you don't want your token at the configuration file.

@@ -3,6 +3,7 @@ module github.com/eargollo/smartthings-influx
 go 1.19
 
 require (
+	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/google/uuid v1.3.0
 	github.com/influxdata/influxdb v1.10.0
 	github.com/spf13/cobra v1.5.0

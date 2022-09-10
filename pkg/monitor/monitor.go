@@ -6,6 +6,8 @@ import (
 	"strings"
 	"time"
 
+	retry "github.com/avast/retry-go"
+
 	"github.com/eargollo/smartthings-influx/pkg/smartthings"
 	"github.com/google/uuid"
 	"github.com/influxdata/influxdb/client/v2"
@@ -122,7 +124,13 @@ func (mon Monitor) Run() error {
 
 		if len(bp.Points()) > 0 {
 			// Record points
-			err = mon.influx.Write(bp)
+			err := retry.Do(func() error {
+				result := mon.influx.Write(bp)
+				if result != nil {
+					log.Printf("Error writing point: %v", result)
+				}
+				return result
+			})
 			if err != nil {
 				log.Printf("Error writing point: %v", err)
 			} else {
