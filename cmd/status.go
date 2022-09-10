@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,7 +31,12 @@ var statusCmd = &cobra.Command{
 	Short: "Status of a device or all devices",
 	Long:  `Shows the status of a specific device or of all devices`,
 	Run: func(cmd *cobra.Command, args []string) {
-		smartthings.Init(viper.GetString("apitoken"))
+		convMap, err := smartthings.ParseConversionMap(viper.GetStringMap("valuemap"))
+		if err != nil {
+			log.Fatalf("Error initializing SmartThings client: %v", err)
+		}
+
+		smartthings.Init(viper.GetString("apitoken"), convMap)
 		list, err := smartthings.Devices()
 		if err != nil {
 			log.Fatal(err)

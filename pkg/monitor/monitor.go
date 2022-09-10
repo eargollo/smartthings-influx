@@ -1,15 +1,14 @@
 package monitor
 
 import (
-	"fmt"
 	"log"
 	"strings"
 	"time"
 
 	retry "github.com/avast/retry-go"
+	"github.com/google/uuid"
 
 	"github.com/eargollo/smartthings-influx/pkg/smartthings"
-	"github.com/google/uuid"
 	"github.com/influxdata/influxdb/client/v2"
 )
 
@@ -22,9 +21,8 @@ type Monitor struct {
 }
 
 type mondevice struct {
-	id         uuid.UUID
-	device     string
-	component  string
+	device     smartthings.Device
+	component  smartthings.Component
 	capability string
 	last       time.Time
 }
@@ -34,19 +32,30 @@ func New(st *smartthings.Client, influx client.HTTPClient, database string, metr
 }
 
 func (mon Monitor) Run() error {
-	devices, err := mon.MonitoringDevices()
-	if err != nil {
-		return fmt.Errorf("could not list devices: %v", err)
-	}
-	if len(devices) == 0 {
-		return fmt.Errorf("no devices with any of the metrics: %s", strings.Join(mon.metrics, ", "))
-	}
+	duration := time.Duration(0) // Cheap trick not to sleep at the first round
 
-	for _, dev := range devices {
-		log.Printf("Monitoring %s from device %s (%s)", dev.capability, dev.device, dev.id.String())
-	}
+	lastUpdate := make(map[uuid.UUID]time.Time)
 
 	for {
+		// Cheap trick not to sleep at the first round
+		time.Sleep(duration)
+		duration = time.Duration(mon.interval) * time.Second
+		// End of cheap trick
+
+		// Using another map so we update the timestamp only when the record is serialized
+		newLastUpdate := make(map[uuid.UUID]time.Time)
+
+		// List devices with metrics
+		devices, err := mon.st.DevicesWithCapabilities(mon.metrics)
+		if err != nil {
+			log.Printf("ERROR: could not list devices: %v", err)
+			continue
+		}
+		if len(devices.Items) == 0 {
+			log.Printf("ERROR: no devices with any of the metrics: %s", strings.Join(mon.metrics, ", "))
+			continue
+		}
+
 		bp, err := client.NewBatchPoints(client.BatchPointsConfig{
 			Database:  mon.database,
 			Precision: "s",
@@ -57,44 +66,32 @@ func (mon Monitor) Run() error {
 			continue
 		}
 
-		for i, dev := range devices {
+		for i, dev := range devices.Items {
+			log.Printf("%d: Monitoring '%s' from device '%s' (%s)", i, dev.Capability.Id, dev.Device.Label, dev.Device.DeviceId)
 			// Get measurement
-			status, err := mon.st.DeviceCapabilityStatus(dev.id, dev.component, dev.capability)
+			status, err := dev.Status()
 			if err != nil {
-				log.Printf("could not get capability status: %v", err)
+				log.Printf("ERROR: could not get metric status: %v", err)
 				continue
 			}
 
 			for key, val := range status {
-				if val == nil {
-					log.Printf("could not get value for capability status: %v", err)
+				if val.Value == nil {
+					log.Printf("WARNING: Got nil metric value: %v", err)
 					continue
 				}
 
-				log.Printf("Key is %s and value %v", key, val)
-				inner, ok := val.(map[string]interface{})
-				if !ok {
-					log.Print("error, type was not interface")
-					continue
-				}
-				// Get timestamp
-				layout := "2006-01-02T15:04:05.000Z"
-				str, ok := inner["timestamp"].(string)
-				if !ok {
-					log.Print("error, timestatmp was not a string")
-					continue
-				}
-				t, err := time.Parse(layout, str)
+				// Get converted value
+				convValue, err := val.FloatValue(key)
 				if err != nil {
-					log.Printf("could not convert timestamp %s: %v", str, err)
+					log.Printf("ERROR: could not convert to number %v", err)
 					continue
 				}
 
-				if inner["value"] == nil {
-					continue
-				}
+				log.Printf("Key is %s value %v number value %f", key, val, convValue)
 
-				if dev.last == t {
+				if lastUpdate[dev.Device.DeviceId] == val.Timestamp {
+					log.Printf("No changes since last query. Skipping.")
 					continue
 				}
 
@@ -102,14 +99,15 @@ func (mon Monitor) Run() error {
 				point, err := client.NewPoint(
 					key,
 					map[string]string{
-						"device":     dev.device,
-						"component":  dev.component,
-						"capability": dev.capability,
+						"device":     dev.Device.Label,
+						"component":  dev.Component.Id,
+						"capability": dev.Capability.Id,
+						"unit":       val.Unit,
 					},
 					map[string]interface{}{
-						"value": inner["value"].(float64),
+						"value": convValue,
 					},
-					t,
+					val.Timestamp,
 				)
 				if err != nil {
 					log.Printf("could not create point: %v", err)
@@ -118,7 +116,7 @@ func (mon Monitor) Run() error {
 				}
 
 				bp.AddPoint(point)
-				devices[i].last = t
+				newLastUpdate[dev.Device.DeviceId] = val.Timestamp
 			}
 		}
 
@@ -135,34 +133,11 @@ func (mon Monitor) Run() error {
 				log.Printf("Error writing point: %v", err)
 			} else {
 				log.Printf("Record saved %v", bp)
+				lastUpdate = newLastUpdate
 			}
 		} else {
 			log.Printf("No new read since last update")
 		}
 
-		time.Sleep(time.Duration(mon.interval) * time.Second)
 	}
-
-	// return nil
-}
-
-func (mon Monitor) MonitoringDevices() (devices []mondevice, err error) {
-	list, err := mon.st.Devices()
-	if err != nil {
-		return
-	}
-
-	for _, d := range list.Items {
-		for _, comp := range d.Components {
-			for _, cap := range comp.Capabilities {
-				for _, m := range mon.metrics {
-					if m == cap.Id {
-						devices = append(devices, mondevice{id: d.DeviceId, device: d.Label, component: comp.Id, capability: cap.Id})
-					}
-				}
-			}
-		}
-	}
-
-	return
 }
