@@ -5,3 +5,12 @@ build:
 .PHONY: run
 run:
 	docker-compose up --build
+
+.PHONY: clean
+clean:
+	docker-compose rm
+	rm -rf data
+
+.PHONY: lint
+lint:
+	golangci-lint run

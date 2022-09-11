@@ -20,13 +20,6 @@ type Monitor struct {
 	interval int
 }
 
-type mondevice struct {
-	device     smartthings.Device
-	component  smartthings.Component
-	capability string
-	last       time.Time
-}
-
 func New(st *smartthings.Client, influx client.HTTPClient, database string, metrics []string, interval int) *Monitor {
 	return &Monitor{st: st, influx: influx, database: database, metrics: metrics, interval: interval}
 }

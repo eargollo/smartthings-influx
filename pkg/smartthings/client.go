@@ -3,7 +3,7 @@ package smartthings
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -177,7 +177,7 @@ func (c Client) get(endpoint string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return []byte{}, err
 	}
