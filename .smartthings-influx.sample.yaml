@@ -1,5 +1,6 @@
 apitoken: <put your SmartThings API token here>
 monitor:
+  - light
   - temperatureMeasurement
   - illuminanceMeasurement
   - relativeHumidityMeasurement
@@ -9,3 +10,7 @@ influxurl: http://localhost:8086
 influxuser: user
 influxpassword: password
 influxdatabase: database
+valuemap:
+  switch: 
+    off: 0
+    on: 1

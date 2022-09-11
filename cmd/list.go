@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,7 +33,12 @@ var listCmd = &cobra.Command{
 	   - Capabilities
 	   `,
 	Run: func(cmd *cobra.Command, args []string) {
-		smartthings.Init(viper.GetString("apitoken"))
+		convMap, err := smartthings.ParseConversionMap(viper.GetStringMap("valuemap"))
+		if err != nil {
+			log.Fatalf("Error initializing SmartThings client: %v", err)
+		}
+
+		smartthings.Init(viper.GetString("apitoken"), convMap)
 		list, err := smartthings.Devices()
 
 		if err != nil {
@@ -44,7 +49,7 @@ var listCmd = &cobra.Command{
 			fmt.Printf("%d: %s, %s, %s\n", i, d.DeviceId, d.Name, d.Label)
 			for _, comp := range d.Components {
 				for _, cap := range comp.Capabilities {
-					fmt.Printf("   | %s.%s\n", comp.Id, cap.Id)
+					fmt.Printf("   | %s\n", cap.Id)
 				}
 			}
 		}

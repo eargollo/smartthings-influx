@@ -32,6 +32,7 @@ Create the `.smartthings-influx.yaml` file either at your home folder or at the 
 ```yaml
 apitoken: <put your SmartThings API token here>
 monitor:
+  - light
   - temperatureMeasurement
   - illuminanceMeasurement
   - relativeHumidityMeasurement
@@ -40,7 +41,15 @@ influxurl: http://localhost:8086
 influxuser: user
 influxpassword: password
 influxdatabase: database
+valuemap:
+  switch: 
+    off: 0
+    on: 1
 ```
+
+You can still monitor non numerical values by adding a value conversion map. On the file above, light has a switch metric whose values are either 'on' or 'off'. The `valuemap` configuration converts on to 1 and off to 0.
+
+If you don't know the capability and their metrics, you can run the `status` option to list the capability and check the monitor error message. It will shwo the missing metrics and their values.
 
 Run the monitor option:
 ```
