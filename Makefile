@@ -4,11 +4,11 @@ build:
 
 .PHONY: run
 run:
-	docker-compose up --build
+	UID=$(id -u) GID=$(id -g) docker-compose -f docker-compose-dev.yml up --build
 
 .PHONY: clean
 clean:
-	docker-compose rm
+	docker-compose -f docker-compose-dev.yml rm
 	rm -rf data
 
 .PHONY: lint
@@ -28,4 +28,4 @@ lint-vulnerability:
 
 .PHONY: outdated
 outdated:
-	@go list -u -m -f '{{if not .Indirect}}{{.}}{{end}}' all | grep \\[
+	@go list -u -m -f '{{if not .Indirect}}{{.}}{{end}}' all | grep -F '[' || true
