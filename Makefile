@@ -25,3 +25,7 @@ lint-security:
 .PHONY: lint-vulnerability
 lint-vulnerability:
 	govulncheck ./...
+
+.PHONY: outdated
+outdated:
+	@go list -u -m -f '{{if not .Indirect}}{{.}}{{end}}' all | grep \\[

@@ -1,7 +1,7 @@
 version: '2'
 services:
   monitor:
-    image: eargollo/smartthings-influx:latest
+    build: .
     environment:
       - APITOKEN
     volumes:

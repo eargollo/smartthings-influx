@@ -16,7 +16,7 @@ Go to [SmartThings API Token](https://account.smartthings.com/tokens) page and c
 
 Run Docker Compose:
 ```
-$ docker-compose up --build
+$ UID=$(id -u) GID=$(id -g) docker-compose up
 ```
 
 Go to [Grafana inteface](http://localhost:3000) and log with user `admin` and password `password`.
@@ -25,12 +25,17 @@ There is already a pre-provisioned Grafana dashboard to hold your SmartThings da
 
 Have fun!
 
-## Usage
+## Running locally (requires Golang)
+
+Build the executable
+```
+$ make build
+```
 
 Create the `.smartthings-influx.yaml` file either at your home folder or at the folder where you run the program:
 
 ```yaml
-apitoken: <put your SmartThings API token here>
+apitoken: <put your SmartThings API token here or export APITOKEN env var>
 monitor:
   - light
   - temperatureMeasurement
