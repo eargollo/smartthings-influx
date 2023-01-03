@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
 	github.com/google/uuid v1.3.0
-	github.com/influxdata/influxdb v1.10.0
+	github.com/influxdata/influxdb v1.11.0
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.14.0
 )
