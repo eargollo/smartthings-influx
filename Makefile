@@ -29,3 +29,7 @@ lint-vulnerability:
 .PHONY: outdated
 outdated:
 	@go list -u -m -f '{{if not .Indirect}}{{.}}{{end}}' all | grep -F '[' || true
+
+.PHONY: release
+release:
+	docker buildx build --platform linux/amd64,linux/arm64 --push -t eargollo/smartthings-influx .
