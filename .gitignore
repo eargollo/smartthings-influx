@@ -1,3 +1,4 @@
 .smartthings-influx.yaml
 data
 /smartthings-influx
+dist/
