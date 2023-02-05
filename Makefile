@@ -33,3 +33,7 @@ outdated:
 .PHONY: release
 release:
 	docker buildx build --platform linux/amd64,linux/arm64 --push -t eargollo/smartthings-influx .
+
+.PHONY: docker
+docker:
+	docker build . -t smartthings-influx 
