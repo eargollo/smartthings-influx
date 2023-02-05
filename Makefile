@@ -2,6 +2,10 @@
 build:
 	CGO_ENABLED=0 go build -ldflags "-extldflags=-static" .
 
+.PHONY: test
+test:
+	go test -cover ./...
+
 .PHONY: run
 run:
 	UID=$(id -u) GID=$(id -g) docker-compose -f docker-compose-dev.yml up --build
