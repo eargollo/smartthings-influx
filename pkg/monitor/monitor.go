@@ -38,6 +38,7 @@ func (mon Monitor) Run(dbClient database.Client) error {
 		dataPoints, err := mon.InspectDevices()
 		if err != nil {
 			log.Printf("ERROR: Could not gather devices data: %v", err)
+
 			continue
 		}
 
@@ -46,6 +47,7 @@ func (mon Monitor) Run(dbClient database.Client) error {
 
 		if len(dataPoints) == 0 {
 			log.Printf("ERROR: no devices with any of the metrics: %s", strings.Join(mon.metrics, ", "))
+
 			continue
 		}
 

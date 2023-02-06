@@ -30,7 +30,7 @@ func (c SmartThingsTransport) Devices() (DevicesList, error) {
 	err = json.Unmarshal(data, &devices)
 
 	for i, dev := range devices.Items {
-		dev.client = &c
+		dev.Client = &c
 		devices.Items[i] = dev
 	}
 

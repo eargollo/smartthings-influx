@@ -9,7 +9,7 @@ type Device struct {
 	Name       string      `json:"name"`
 	Label      string      `json:"label"`
 	Components []Component `json:"components"`
-	client     Transport
+	Client     Transport
 }
 
 type Component struct {
@@ -40,11 +40,11 @@ type DeviceWithCapability struct {
 }
 
 func (d *Device) Status() (DeviceStatus, error) {
-	return d.client.DeviceStatus(d.DeviceId)
+	return d.Client.DeviceStatus(d.DeviceId)
 }
 
 func (d *Device) CapabilityStatus(componentId, capabilityID string) (map[string]CapabilityStatus, error) {
-	return d.client.DeviceCapabilityStatus(d.DeviceId, componentId, capabilityID)
+	return d.Client.DeviceCapabilityStatus(d.DeviceId, componentId, capabilityID)
 }
 
 type DeviceCapabilitiesResult struct {
