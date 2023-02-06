@@ -38,8 +38,8 @@ var listCmd = &cobra.Command{
 			log.Fatalf("Error initializing SmartThings client: %v", err)
 		}
 
-		smartthings.Init(viper.GetString("apitoken"), convMap)
-		list, err := smartthings.Devices()
+		client := smartthings.Init(smartthings.NewTransport(viper.GetString("apitoken")), convMap)
+		list, err := client.Devices()
 
 		if err != nil {
 			log.Fatal(err)

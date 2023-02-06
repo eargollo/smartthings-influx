@@ -12,7 +12,7 @@ func Test_initConverstionMap(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    map[string]map[string]float64
+		want    ConversionMap
 		wantErr bool
 	}{
 		{
@@ -71,24 +71,20 @@ func Test_initConverstionMap(t *testing.T) {
 }
 
 func TestClient_ConvertValueToFloat(t *testing.T) {
-	type fields struct {
-		token         string
-		conversionMap map[string]map[string]float64
-	}
 	type args struct {
 		metric string
 		value  any
 	}
 	tests := []struct {
-		name    string
-		fields  fields
-		args    args
-		want    float64
-		wantErr bool
+		name          string
+		conversionMap ConversionMap
+		args          args
+		want          float64
+		wantErr       bool
 	}{
 		{
-			name:   "float and no map",
-			fields: fields{"", map[string]map[string]float64{}},
+			name:          "float and no map",
+			conversionMap: map[string]map[string]float64{},
 			args: args{
 				metric: "temperature",
 				value:  8.25,
@@ -97,8 +93,8 @@ func TestClient_ConvertValueToFloat(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name:   "string and no map",
-			fields: fields{"", map[string]map[string]float64{}},
+			name:          "string and no map",
+			conversionMap: map[string]map[string]float64{},
 			args: args{
 				metric: "light",
 				value:  "off",
@@ -107,8 +103,8 @@ func TestClient_ConvertValueToFloat(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:   "mapped string",
-			fields: fields{"", map[string]map[string]float64{"light": {"on": 1.0}}},
+			name:          "mapped string",
+			conversionMap: map[string]map[string]float64{"light": {"on": 1.0}},
 			args: args{
 				metric: "light",
 				value:  "on",
@@ -119,11 +115,7 @@ func TestClient_ConvertValueToFloat(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := Client{
-				token:         tt.fields.token,
-				conversionMap: tt.fields.conversionMap,
-			}
-			got, err := c.ConvertValueToFloat(tt.args.metric, tt.args.value)
+			got, err := tt.conversionMap.ConvertValueToFloat(tt.args.metric, tt.args.value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Client.ConvertValueToFloat() error = %v, wantErr %v", err, tt.wantErr)
 				return

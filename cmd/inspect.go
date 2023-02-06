@@ -16,6 +16,7 @@ limitations under the License.
 package cmd
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/eargollo/smartthings-influx/pkg/database"
@@ -26,13 +27,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-// monitorCmd represents the monitor command
-var monitorCmd = &cobra.Command{
-	Use:   "monitor",
-	Short: "Continuously monitor your SmartThings",
-	Long: `Monitor your SmartThings non stop according to the configuration
-	at .smartthings-influx.yaml. Runs at regular intervals and saves the measurements
-	data in InfluxDB.`,
+// inspectCmd represents the monitor command.
+var inspectCmd = &cobra.Command{
+	Use:   "inspect",
+	Short: "Runs a pass on SmartThings listing current data",
+	Long: `Runs a single pass of what the Monitor would do, listing
+	the data that would have been stored in InfluxDB.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// Influx
 		c, err := client.NewHTTPClient(client.HTTPConfig{
@@ -56,23 +56,35 @@ var monitorCmd = &cobra.Command{
 
 		// Monitor
 		mon := monitor.New(cli, influxDB, viper.GetStringSlice("monitor"), viper.GetInt("period"))
-		err = mon.Run()
+		data, err := mon.InspectDevices()
 		if err != nil {
 			log.Fatalf("%v", err)
+		}
+		for i, dp := range data {
+			fmt.Printf("%d\t%s\t%s\t%s\t%s\t%.2f %s\t%s\n",
+				i+1,
+				dp.Key,
+				dp.Device,
+				dp.Component,
+				dp.Capability,
+				dp.Value,
+				dp.Unit,
+				dp.Timestamp.String(),
+			)
 		}
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(monitorCmd)
+	rootCmd.AddCommand(inspectCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// monitorCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// inspectCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// monitorCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// inspectCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
