@@ -55,8 +55,8 @@ var monitorCmd = &cobra.Command{
 		cli := smartthings.Init(smartthings.NewTransport(viper.GetString("apitoken")), convMap)
 
 		// Monitor
-		mon := monitor.New(cli, influxDB, viper.GetStringSlice("monitor"), viper.GetInt("period"))
-		err = mon.Run()
+		mon := monitor.New(cli, viper.GetStringSlice("monitor"), viper.GetInt("period"))
+		err = mon.Run(influxDB)
 		if err != nil {
 			log.Fatalf("%v", err)
 		}

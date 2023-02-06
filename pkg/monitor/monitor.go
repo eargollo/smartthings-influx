@@ -14,19 +14,19 @@ import (
 
 type Monitor struct {
 	st         smartthings.Client
-	dbClient   database.Client
 	metrics    []string
 	interval   int
 	lastUpdate map[uuid.UUID]time.Time
 }
 
-func New(st smartthings.Client, dbClient database.Client, metrics []string, interval int) *Monitor {
-	mon := Monitor{st: st, dbClient: dbClient, metrics: metrics, interval: interval}
+func New(st smartthings.Client, metrics []string, interval int) *Monitor {
+	mon := Monitor{st: st, metrics: metrics, interval: interval}
 	mon.lastUpdate = make(map[uuid.UUID]time.Time)
+
 	return &mon
 }
 
-func (mon Monitor) Run() error {
+func (mon Monitor) Run(dbClient database.Client) error {
 	duration := time.Duration(0) // Cheap trick not to sleep at the first round
 
 	for {
@@ -62,7 +62,7 @@ func (mon Monitor) Run() error {
 		}
 
 		if len(updateDataPoints) > 0 {
-			err = mon.dbClient.Save(updateDataPoints)
+			err = dbClient.Save(updateDataPoints)
 			if err != nil {
 				log.Printf("Monitor got error writing point: %v", err)
 			} else {

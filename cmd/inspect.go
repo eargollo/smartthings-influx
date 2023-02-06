@@ -19,10 +19,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/eargollo/smartthings-influx/pkg/database"
 	"github.com/eargollo/smartthings-influx/pkg/monitor"
 	"github.com/eargollo/smartthings-influx/pkg/smartthings"
-	"github.com/influxdata/influxdb/client/v2"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -34,18 +32,6 @@ var inspectCmd = &cobra.Command{
 	Long: `Runs a single pass of what the Monitor would do, listing
 	the data that would have been stored in InfluxDB.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Influx
-		c, err := client.NewHTTPClient(client.HTTPConfig{
-			Addr:     viper.GetString("influxurl"),
-			Username: viper.GetString("influxuser"),
-			Password: viper.GetString("influxpassword"),
-		})
-		if err != nil {
-			log.Fatalln("Error: ", err)
-		}
-
-		influxDB := database.NewInfluxDBClient(c, viper.GetString("influxdatabase"))
-
 		// SmartThings
 		convMap, err := smartthings.ParseConversionMap(viper.GetStringMap("valuemap"))
 		if err != nil {
@@ -55,11 +41,21 @@ var inspectCmd = &cobra.Command{
 		cli := smartthings.Init(smartthings.NewTransport(viper.GetString("apitoken")), convMap)
 
 		// Monitor
-		mon := monitor.New(cli, influxDB, viper.GetStringSlice("monitor"), viper.GetInt("period"))
+		mon := monitor.New(cli, viper.GetStringSlice("monitor"), viper.GetInt("period"))
 		data, err := mon.InspectDevices()
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
+
+		fmt.Printf("%s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+			"Order",
+			"Metric",
+			"Device",
+			"Component",
+			"Capability",
+			"Value",
+			"Timestamp",
+		)
 		for i, dp := range data {
 			fmt.Printf("%d\t%s\t%s\t%s\t%s\t%.2f %s\t%s\n",
 				i+1,
