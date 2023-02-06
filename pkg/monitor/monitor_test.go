@@ -1,4 +1,4 @@
-package monitor
+package monitor_test
 
 import (
 	"reflect"
@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/eargollo/smartthings-influx/pkg/database"
+	"github.com/eargollo/smartthings-influx/pkg/monitor"
 	"github.com/eargollo/smartthings-influx/pkg/smartthings"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/mock"
@@ -15,17 +16,17 @@ type MockedTransport struct {
 	mock.Mock
 }
 
-func (m *MockedTransport) Devices() (devices smartthings.DevicesList, err error) {
+func (m *MockedTransport) Devices() (smartthings.DevicesList, error) {
 	args := m.Called()
 	return args.Get(0).(smartthings.DevicesList), args.Error(1)
 }
 
-func (m *MockedTransport) DeviceStatus(deviceID uuid.UUID) (status smartthings.DeviceStatus, err error) {
+func (m *MockedTransport) DeviceStatus(deviceID uuid.UUID) (smartthings.DeviceStatus, error) {
 	args := m.Called(deviceID)
 	return args.Get(0).(smartthings.DeviceStatus), args.Error(1)
 }
 
-func (m *MockedTransport) DeviceCapabilityStatus(deviceID uuid.UUID, componentId string, capabilityId string) (status map[string]smartthings.CapabilityStatus, err error) {
+func (m *MockedTransport) DeviceCapabilityStatus(deviceID uuid.UUID, componentId string, capabilityId string) (map[string]smartthings.CapabilityStatus, error) {
 	args := m.Called(deviceID, componentId, capabilityId)
 	return args.Get(0).(map[string]smartthings.CapabilityStatus), args.Error(1)
 }
@@ -112,10 +113,11 @@ func TestMonitor_InspectDevices(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mon := New(tt.fields.st, tt.fields.metrics, tt.fields.interval)
+			mon := monitor.New(tt.fields.st, tt.fields.metrics, tt.fields.interval)
 			got, err := mon.InspectDevices()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Monitor.InspectDevices() error = %v, wantErr %v", err, tt.wantErr)
+
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
