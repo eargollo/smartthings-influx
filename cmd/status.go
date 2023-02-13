@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/eargollo/smartthings-influx/internal/config"
 	"github.com/eargollo/smartthings-influx/pkg/smartthings"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // statusCmd represents the status command
@@ -31,12 +31,12 @@ var statusCmd = &cobra.Command{
 	Short: "Status of a device or all devices",
 	Long:  `Shows the status of a specific device or of all devices`,
 	Run: func(cmd *cobra.Command, args []string) {
-		convMap, err := smartthings.ParseConversionMap(viper.GetStringMap("valuemap"))
+		config, err := config.Load(cfgFile)
 		if err != nil {
-			log.Fatalf("Error initializing SmartThings client: %v", err)
+			log.Fatalf("Error loading configuration: %v", err)
 		}
 
-		client := smartthings.Init(smartthings.NewTransport(viper.GetString("apitoken")), convMap)
+		client := smartthings.Init(smartthings.NewTransport(config.APIToken), config.ValueMap)
 		list, err := client.Devices()
 		if err != nil {
 			log.Fatal(err)
@@ -51,7 +51,6 @@ var statusCmd = &cobra.Command{
 				fmt.Printf("%d: %s (%s): %v\n", i, d.Label, d.Name, string(bs))
 			}
 		}
-
 	},
 }
 

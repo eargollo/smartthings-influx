@@ -1,0 +1,16 @@
+apitoken: TOKEN
+monitor:
+  - light
+  - temperatureMeasurement
+  - illuminanceMeasurement
+  - relativeHumidityMeasurement
+  - ultravioletIndex
+period: 120
+influxurl: http://localhost:8086
+influxuser: user
+influxpassword: password
+influxdatabase: database
+valuemap:
+  switch: 
+    off: 0
+    on: 1

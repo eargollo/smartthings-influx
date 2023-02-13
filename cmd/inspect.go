@@ -19,10 +19,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/eargollo/smartthings-influx/internal/config"
 	"github.com/eargollo/smartthings-influx/pkg/monitor"
-	"github.com/eargollo/smartthings-influx/pkg/smartthings"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // inspectCmd represents the monitor command.
@@ -32,16 +31,16 @@ var inspectCmd = &cobra.Command{
 	Long: `Runs a single pass of what the Monitor would do, listing
 	the data that would have been stored in InfluxDB.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// SmartThings
-		convMap, err := smartthings.ParseConversionMap(viper.GetStringMap("valuemap"))
+		config, err := config.Load(cfgFile)
 		if err != nil {
-			log.Fatalf("Error initializing SmartThings client: %v", err)
+			log.Fatalf("Error loading configuration: %v", err)
 		}
 
-		cli := smartthings.Init(smartthings.NewTransport(viper.GetString("apitoken")), convMap)
-
 		// Monitor
-		mon := monitor.New(cli, viper.GetStringSlice("monitor"), viper.GetInt("period"))
+		mon, err := monitor.New(config)
+		if err != nil {
+			log.Fatalf("Error initializing monitor: %v", err)
+		}
 		data, err := mon.InspectDevices()
 		if err != nil {
 			log.Fatalf("%v", err)

@@ -5,10 +5,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/eargollo/smartthings-influx/internal/config"
 	"github.com/eargollo/smartthings-influx/pkg/database"
 	"github.com/eargollo/smartthings-influx/pkg/monitor"
 	"github.com/eargollo/smartthings-influx/pkg/smartthings"
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -75,26 +77,17 @@ func TestMonitor_InspectDevices(t *testing.T) {
 		nil,
 	)
 
-	cli := smartthings.Init(testObj, map[string]map[string]float64{})
-
-	type fields struct {
-		st       smartthings.Client
-		metrics  []string
-		interval int
-	}
-
 	tests := []struct {
 		name    string
-		fields  fields
+		config  config.Config
 		want    []database.DeviceDataPoint
 		wantErr bool
 	}{
 		{
 			name: "Keep original time",
-			fields: fields{
-				st:       cli,
-				metrics:  []string{"temperatureMeasurement"},
-				interval: 100,
+			config: config.Config{
+				Monitor: []string{"temperatureMeasurement"},
+				Period:  100,
 			},
 			want: []database.DeviceDataPoint{
 				database.DeviceDataPoint{
@@ -113,7 +106,11 @@ func TestMonitor_InspectDevices(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mon := monitor.New(tt.fields.st, tt.fields.metrics, tt.fields.interval)
+			mon, err := monitor.New(&tt.config)
+			assert.NoError(t, err)
+
+			mon.SetTransport(testObj)
+
 			got, err := mon.InspectDevices()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Monitor.InspectDevices() error = %v, wantErr %v", err, tt.wantErr)

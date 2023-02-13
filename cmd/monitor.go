@@ -18,12 +18,9 @@ package cmd
 import (
 	"log"
 
-	"github.com/eargollo/smartthings-influx/pkg/database"
+	"github.com/eargollo/smartthings-influx/internal/config"
 	"github.com/eargollo/smartthings-influx/pkg/monitor"
-	"github.com/eargollo/smartthings-influx/pkg/smartthings"
-	"github.com/influxdata/influxdb/client/v2"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // monitorCmd represents the monitor command
@@ -34,29 +31,18 @@ var monitorCmd = &cobra.Command{
 	at .smartthings-influx.yaml. Runs at regular intervals and saves the measurements
 	data in InfluxDB.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Influx
-		c, err := client.NewHTTPClient(client.HTTPConfig{
-			Addr:     viper.GetString("influxurl"),
-			Username: viper.GetString("influxuser"),
-			Password: viper.GetString("influxpassword"),
-		})
+		config, err := config.Load(cfgFile)
 		if err != nil {
-			log.Fatalln("Error: ", err)
+			log.Fatalf("Error loading configuration: %v", err)
 		}
-
-		influxDB := database.NewInfluxDBClient(c, viper.GetString("influxdatabase"))
-
-		// SmartThings
-		convMap, err := smartthings.ParseConversionMap(viper.GetStringMap("valuemap"))
-		if err != nil {
-			log.Fatalf("Error initializing SmartThings client: %v", err)
-		}
-
-		cli := smartthings.Init(smartthings.NewTransport(viper.GetString("apitoken")), convMap)
 
 		// Monitor
-		mon := monitor.New(cli, viper.GetStringSlice("monitor"), viper.GetInt("period"))
-		err = mon.Run(influxDB)
+		mon, err := monitor.New(config)
+		if err != nil {
+			log.Fatalf("Error initializing monitor: %v", err)
+		}
+
+		err = mon.Run()
 		if err != nil {
 			log.Fatalf("%v", err)
 		}
