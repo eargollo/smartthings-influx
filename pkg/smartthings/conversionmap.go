@@ -22,5 +22,5 @@ func (c ConversionMap) ConvertValueToFloat(metric string, value any) (float64, e
 		}
 		return metricMap[stValue], nil
 	}
-	return 0, nil
+	return 0, fmt.Errorf("there is no value map for metric '%s' and value '%v', can't convert", metric, value)
 }

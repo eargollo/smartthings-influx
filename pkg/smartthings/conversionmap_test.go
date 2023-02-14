@@ -46,6 +46,16 @@ func TestClient_ConvertValueToFloat(t *testing.T) {
 			want:    1.0,
 			wantErr: false,
 		},
+		{
+			name:          "mapped map err",
+			conversionMap: map[string]map[string]float64{"light": {"on": 1.0}},
+			args: args{
+				metric: "light",
+				value:  map[string]string{"a": "b"},
+			},
+			want:    0,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
