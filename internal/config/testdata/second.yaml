@@ -1,0 +1,10 @@
+monitor:
+  - light
+  - temperatureMeasurement
+  - illuminanceMeasurement
+  - relativeHumidityMeasurement
+  - ultravioletIndex
+monitorconfig:
+  light:
+    timeset: call
+

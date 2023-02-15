@@ -41,3 +41,8 @@ release:
 .PHONY: docker
 docker:
 	docker build . -t smartthings-influx 
+
+.PHONY: cover
+cover:
+	go test -coverprofile=coverage.out -covermode=count  ./...
+	@go tool cover -func=coverage.out | grep total | grep -Eo '[0-9]+\.[0-9]+'

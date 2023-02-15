@@ -1,13 +1,12 @@
 package config
 
 import (
-	"os"
 	"reflect"
 	"testing"
 )
 
 func TestLoad(t *testing.T) {
-	os.Setenv("APITOKEN", "1")
+	t.Setenv("APITOKEN", "1")
 
 	tests := []struct {
 		name    string
@@ -25,6 +24,10 @@ func TestLoad(t *testing.T) {
 			InfluxPassword: "password",
 			InfluxDatabase: "database",
 			ValueMap:       map[string]map[string]float64{"switch": map[string]float64{"on": 1, "off": 0}},
+		}, wantErr: false},
+		{name: "second", file: "testdata/second.yaml", want: &Config{
+			Monitor:       []string{"light", "temperatureMeasurement", "illuminanceMeasurement", "relativeHumidityMeasurement", "ultravioletIndex"},
+			MonitorConfig: map[string]MonitorConfguration{"light": {TimeSet: Call}},
 		}, wantErr: false},
 	}
 	for _, tt := range tests {

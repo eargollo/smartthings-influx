@@ -20,10 +20,21 @@ type Monitor struct {
 	stClient   smartthings.Client
 	dbClient   database.Client
 	lastUpdate map[uuid.UUID]time.Time
+	clock      Clock
+}
+
+type Clock interface {
+	Now() time.Time
+}
+
+type realClock struct{}
+
+func (realClock) Now() time.Time {
+	return time.Now()
 }
 
 func New(config *config.Config) (*Monitor, error) {
-	mon := Monitor{config: config}
+	mon := Monitor{config: config, clock: realClock{}}
 
 	// SmartThings client if token is set
 	if config.APIToken != "" {
@@ -47,6 +58,10 @@ func New(config *config.Config) (*Monitor, error) {
 	mon.lastUpdate = make(map[uuid.UUID]time.Time)
 
 	return &mon, nil
+}
+
+func (mon *Monitor) SetClock(clock Clock) {
+	mon.clock = clock
 }
 
 func (mon Monitor) Run() error {
@@ -147,6 +162,14 @@ func (mon Monitor) InspectDevices() ([]database.DeviceDataPoint, error) {
 
 			log.Printf("Key is %s value %v number value %f", key, val, convValue)
 
+			readTime := val.Timestamp
+			mc, ok := mon.config.MonitorConfig[dev.CapabilityId]
+			if ok {
+				if mc.TimeSet == config.Call {
+					readTime = mon.clock.Now()
+				}
+			}
+
 			// Create point
 			point := database.DeviceDataPoint{
 				Key:        key,
@@ -156,7 +179,7 @@ func (mon Monitor) InspectDevices() ([]database.DeviceDataPoint, error) {
 				Capability: dev.CapabilityId,
 				Unit:       val.Unit,
 				Value:      convValue,
-				Timestamp:  val.Timestamp,
+				Timestamp:  readTime,
 			}
 
 			dataPoints = append(dataPoints, point)

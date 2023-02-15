@@ -33,6 +33,15 @@ func (m *MockedTransport) DeviceCapabilityStatus(deviceID uuid.UUID, componentId
 	return args.Get(0).(map[string]smartthings.CapabilityStatus), args.Error(1)
 }
 
+type MockedClock struct {
+	mock.Mock
+}
+
+func (m *MockedClock) Now() time.Time {
+	args := m.Called()
+	return args.Get(0).(time.Time)
+}
+
 func TestMonitor_InspectDevices(t *testing.T) {
 	id1 := uuid.New()
 	ts, _ := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
@@ -107,6 +116,106 @@ func TestMonitor_InspectDevices(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			mon, err := monitor.New(&tt.config)
+			assert.NoError(t, err)
+
+			mon.SetTransport(testObj)
+
+			got, err := mon.InspectDevices()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Monitor.InspectDevices() error = %v, wantErr %v", err, tt.wantErr)
+
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Monitor.InspectDevices() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestMonitor_CallTime(t *testing.T) {
+	id1 := uuid.New()
+	sensorTime, _ := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
+	readTime, _ := time.Parse(time.RFC3339, "2023-01-01T10:00:00Z")
+	tempValue := float64(21)
+
+	testObj := new(MockedTransport)
+	clockObj := new(MockedClock)
+
+	clockObj.On("Now").Return(readTime)
+
+	testObj.On("Devices").Return(
+		smartthings.DevicesList{
+			Items: []smartthings.Device{
+				smartthings.Device{
+					Client:   testObj,
+					DeviceId: id1,
+					Name:     "Mocked Device",
+					Label:    "Mocked Device",
+					Components: []smartthings.Component{
+						smartthings.Component{
+							Id:    "main",
+							Label: "main",
+							Capabilities: []smartthings.Capability{
+								smartthings.Capability{
+									Id:      "temperatureMeasurement",
+									Version: 1,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		nil,
+	)
+
+	testObj.On("DeviceCapabilityStatus", id1, "main", "temperatureMeasurement").Return(
+		map[string]smartthings.CapabilityStatus{
+			"temperature": smartthings.CapabilityStatus{
+				Timestamp: sensorTime,
+				Unit:      "C",
+				Value:     tempValue,
+			},
+		},
+		nil,
+	)
+
+	tests := []struct {
+		name    string
+		config  config.Config
+		want    []database.DeviceDataPoint
+		wantErr bool
+	}{
+		{
+			name: "Keep original time",
+			config: config.Config{
+				Monitor: []string{"temperatureMeasurement"},
+				MonitorConfig: map[string]config.MonitorConfguration{
+					"temperatureMeasurement": {TimeSet: config.Call},
+				},
+				Period: 100,
+			},
+			want: []database.DeviceDataPoint{
+				{
+					Key:        "temperature",
+					DeviceId:   id1,
+					Device:     "Mocked Device",
+					Component:  "main",
+					Capability: "temperatureMeasurement",
+					Value:      tempValue,
+					Unit:       "C",
+					Timestamp:  readTime,
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mon, err := monitor.New(&tt.config)
+			mon.SetClock(clockObj)
+
 			assert.NoError(t, err)
 
 			mon.SetTransport(testObj)

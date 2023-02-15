@@ -9,19 +9,27 @@ import (
 )
 
 type Config struct {
-	APIToken       string                    `yaml:"apitoken"`
-	Monitor        []string                  `yaml:"monitor"`
-	Period         int                       `yaml:"period"`
-	InfluxURL      string                    `yaml:"influxurl"`
-	InfluxUser     string                    `yaml:"influxuser"`
-	InfluxPassword string                    `yaml:"influxpasswword"`
-	InfluxDatabase string                    `yaml:"influxdatabase"`
-	ValueMap       smartthings.ConversionMap `yaml:"valuemap,omitempty"`
+	APIToken       string                         `yaml:"apitoken"`
+	Monitor        []string                       `yaml:"monitor"`
+	Period         int                            `yaml:"period"`
+	InfluxURL      string                         `yaml:"influxurl"`
+	InfluxUser     string                         `yaml:"influxuser"`
+	InfluxPassword string                         `yaml:"influxpasswword"`
+	InfluxDatabase string                         `yaml:"influxdatabase"`
+	ValueMap       smartthings.ConversionMap      `yaml:"valuemap,omitempty"`
+	MonitorConfig  map[string]MonitorConfguration `yaml:"monitorconfig,omitempty"`
 }
 
-type ValueMapType map[string]ValueMapItem
+type TimeRead string
 
-type ValueMapItem map[string]float64
+const (
+	Sensor TimeRead = "sensor"
+	Call            = "call"
+)
+
+type MonitorConfguration struct {
+	TimeSet TimeRead
+}
 
 func Load(cfgFile string) (*Config, error) {
 	conf := &Config{}
