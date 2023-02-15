@@ -24,7 +24,7 @@ type TimeRead string
 
 const (
 	Sensor TimeRead = "sensor"
-	Call            = "call"
+	Call   TimeRead = "call"
 )
 
 type MonitorConfguration struct {
