@@ -19,9 +19,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/eargollo/smartthings-influx/internal/config"
 	"github.com/eargollo/smartthings-influx/pkg/smartthings"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
 // listCmd represents the list command
@@ -33,13 +33,13 @@ var listCmd = &cobra.Command{
 	   - Capabilities
 	   `,
 	Run: func(cmd *cobra.Command, args []string) {
-		convMap, err := smartthings.ParseConversionMap(viper.GetStringMap("valuemap"))
+		config, err := config.Load(cfgFile)
 		if err != nil {
-			log.Fatalf("Error initializing SmartThings client: %v", err)
+			log.Fatalf("Error loading configuration: %v", err)
 		}
 
-		smartthings.Init(viper.GetString("apitoken"), convMap)
-		list, err := smartthings.Devices()
+		client := smartthings.New(config.APIToken)
+		list, err := client.Devices()
 
 		if err != nil {
 			log.Fatal(err)

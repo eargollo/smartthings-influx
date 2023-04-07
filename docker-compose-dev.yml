@@ -5,7 +5,7 @@ services:
     environment:
       - APITOKEN
     volumes:
-      - ./docker-compose-config.yaml:/.smartthings-influx.yaml
+      - ./smartthings-influx-compose.yaml:/.smartthings-influx.yaml
     command: monitor
     depends_on:
       - influxdb

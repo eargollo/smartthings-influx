@@ -2,3 +2,4 @@
 data
 /smartthings-influx
 dist/
+coverage.out

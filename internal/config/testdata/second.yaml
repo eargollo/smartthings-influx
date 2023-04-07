@@ -1,0 +1,10 @@
+monitor:
+  - light
+  - temperatureMeasurement
+  - illuminanceMeasurement
+  - relativeHumidityMeasurement
+  - ultravioletIndex
+smartthings:
+  capabilities:
+    - name: temperatureMeasurement
+      time: wall

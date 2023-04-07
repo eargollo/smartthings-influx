@@ -1,4 +1,4 @@
-apitoken: <put your SmartThings API token here>
+apitoken: TOKEN
 monitor:
   - light
   - temperatureMeasurement
