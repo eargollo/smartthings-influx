@@ -5,6 +5,8 @@ import (
 	"log"
 
 	"github.com/avast/retry-go"
+	"github.com/eargollo/smartthings-influx/pkg/monitor"
+	"github.com/influxdata/influxdb/client/v2"
 	influxcli "github.com/influxdata/influxdb/client/v2"
 )
 
@@ -13,11 +15,21 @@ type InfluxDB struct {
 	database string
 }
 
-func NewInfluxDBClient(client influxcli.HTTPClient, database string) *InfluxDB {
-	return &InfluxDB{client: client, database: database}
+func NewInfluxDBClient(url, user, password, database string) (*InfluxDB, error) {
+	c, err := influxcli.NewHTTPClient(client.HTTPConfig{
+		Addr:     url,
+		Username: user,
+		Password: password,
+	})
+
+	if err != nil {
+		return nil, fmt.Errorf("could not instantiate http client for influx: %v", err)
+	}
+
+	return &InfluxDB{client: c, database: database}, nil
 }
 
-func (db InfluxDB) Save(datapoints []DeviceDataPoint) error {
+func (db InfluxDB) Add(datapoints []monitor.DeviceDataPoint) error {
 	bp, err := influxcli.NewBatchPoints(influxcli.BatchPointsConfig{
 		Database:  db.database,
 		Precision: "s",

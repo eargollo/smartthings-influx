@@ -5,30 +5,27 @@ import (
 	"testing"
 	"time"
 
-	"github.com/eargollo/smartthings-influx/internal/config"
-	"github.com/eargollo/smartthings-influx/pkg/database"
 	"github.com/eargollo/smartthings-influx/pkg/monitor"
 	"github.com/eargollo/smartthings-influx/pkg/smartthings"
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
-type MockedTransport struct {
+type MockedSTClient struct {
 	mock.Mock
 }
 
-func (m *MockedTransport) Devices() (smartthings.DevicesList, error) {
+func (m *MockedSTClient) Devices() (smartthings.DevicesList, error) {
 	args := m.Called()
 	return args.Get(0).(smartthings.DevicesList), args.Error(1)
 }
 
-func (m *MockedTransport) DeviceStatus(deviceID uuid.UUID) (smartthings.DeviceStatus, error) {
+func (m *MockedSTClient) DeviceStatus(deviceID uuid.UUID) (smartthings.DeviceStatus, error) {
 	args := m.Called(deviceID)
 	return args.Get(0).(smartthings.DeviceStatus), args.Error(1)
 }
 
-func (m *MockedTransport) DeviceCapabilityStatus(deviceID uuid.UUID, componentId string, capabilityId string) (map[string]smartthings.CapabilityStatus, error) {
+func (m *MockedSTClient) DeviceCapabilityStatus(deviceID uuid.UUID, componentId string, capabilityId string) (map[string]smartthings.CapabilityStatus, error) {
 	args := m.Called(deviceID, componentId, capabilityId)
 	return args.Get(0).(map[string]smartthings.CapabilityStatus), args.Error(1)
 }
@@ -47,13 +44,12 @@ func TestMonitor_InspectDevices(t *testing.T) {
 	ts, _ := time.Parse(time.RFC3339, "2006-01-02T15:04:05Z")
 	tempValue := float64(21)
 
-	testObj := new(MockedTransport)
+	testObj := new(MockedSTClient)
 
 	testObj.On("Devices").Return(
 		smartthings.DevicesList{
 			Items: []smartthings.Device{
 				smartthings.Device{
-					Client:   testObj,
 					DeviceId: id1,
 					Name:     "Mocked Device",
 					Label:    "Mocked Device",
@@ -88,18 +84,21 @@ func TestMonitor_InspectDevices(t *testing.T) {
 
 	tests := []struct {
 		name    string
-		config  config.Config
-		want    []database.DeviceDataPoint
+		mon     *monitor.Monitor
+		want    []monitor.DeviceDataPoint
 		wantErr bool
 	}{
 		{
 			name: "Keep original time",
-			config: config.Config{
-				Monitor: []string{"temperatureMeasurement"},
-				Period:  100,
-			},
-			want: []database.DeviceDataPoint{
-				database.DeviceDataPoint{
+			mon: monitor.New(
+				monitor.SetClient(testObj),
+				monitor.WithPeriod(100*time.Second),
+				monitor.Capabilities(monitor.MonitorCapabilities{
+					monitor.MonitorCapability{Name: "temperatureMeasurement", Time: monitor.SensorTime},
+				}),
+			),
+			want: []monitor.DeviceDataPoint{
+				monitor.DeviceDataPoint{
 					Key:        "temperature",
 					DeviceId:   id1,
 					Device:     "Mocked Device",
@@ -115,12 +114,7 @@ func TestMonitor_InspectDevices(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mon, err := monitor.New(&tt.config)
-			assert.NoError(t, err)
-
-			mon.SetTransport(testObj)
-
-			got, err := mon.InspectDevices()
+			got, err := tt.mon.InspectDevices()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Monitor.InspectDevices() error = %v, wantErr %v", err, tt.wantErr)
 
@@ -139,7 +133,7 @@ func TestMonitor_CallTime(t *testing.T) {
 	readTime, _ := time.Parse(time.RFC3339, "2023-01-01T10:00:00Z")
 	tempValue := float64(21)
 
-	testObj := new(MockedTransport)
+	testObj := new(MockedSTClient)
 	clockObj := new(MockedClock)
 
 	clockObj.On("Now").Return(readTime)
@@ -148,7 +142,6 @@ func TestMonitor_CallTime(t *testing.T) {
 		smartthings.DevicesList{
 			Items: []smartthings.Device{
 				smartthings.Device{
-					Client:   testObj,
 					DeviceId: id1,
 					Name:     "Mocked Device",
 					Label:    "Mocked Device",
@@ -182,21 +175,28 @@ func TestMonitor_CallTime(t *testing.T) {
 	)
 
 	tests := []struct {
-		name    string
-		config  config.Config
-		want    []database.DeviceDataPoint
+		name string
+		mon  *monitor.Monitor
+		// config  config.Config
+		want    []monitor.DeviceDataPoint
 		wantErr bool
 	}{
 		{
 			name: "Keep original time",
-			config: config.Config{
-				Monitor: []string{"temperatureMeasurement"},
-				MonitorConfig: map[string]config.MonitorConfguration{
-					"temperatureMeasurement": {TimeSet: config.Call},
-				},
-				Period: 100,
-			},
-			want: []database.DeviceDataPoint{
+			mon: monitor.New(
+				monitor.SetClient(testObj),
+				monitor.Capabilities(
+					monitor.MonitorCapabilities{
+						monitor.MonitorCapability{
+							Name: "temperatureMeasurement",
+							Time: monitor.WallTime,
+						},
+					},
+				),
+				monitor.WithClock(clockObj),
+				monitor.WithPeriod(100*time.Second),
+			),
+			want: []monitor.DeviceDataPoint{
 				{
 					Key:        "temperature",
 					DeviceId:   id1,
@@ -213,14 +213,7 @@ func TestMonitor_CallTime(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mon, err := monitor.New(&tt.config)
-			mon.SetClock(clockObj)
-
-			assert.NoError(t, err)
-
-			mon.SetTransport(testObj)
-
-			got, err := mon.InspectDevices()
+			got, err := tt.mon.InspectDevices()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Monitor.InspectDevices() error = %v, wantErr %v", err, tt.wantErr)
 

@@ -9,7 +9,6 @@ type Device struct {
 	Name       string      `json:"name"`
 	Label      string      `json:"label"`
 	Components []Component `json:"components"`
-	Client     Transport
 }
 
 type Component struct {
@@ -39,31 +38,7 @@ type DeviceWithCapability struct {
 	CapabilityId string
 }
 
-func (d *Device) Status() (DeviceStatus, error) {
-	return d.Client.DeviceStatus(d.DeviceId)
-}
-
-func (d *Device) CapabilityStatus(componentId, capabilityID string) (map[string]CapabilityStatus, error) {
-	return d.Client.DeviceCapabilityStatus(d.DeviceId, componentId, capabilityID)
-}
-
 type DeviceCapabilitiesResult struct {
 	ComponentId  string
 	CapabilityId string
-}
-
-func (d *Device) ListSelectedCapabilities(capabilities []string) []DeviceCapabilitiesResult {
-	result := []DeviceCapabilitiesResult{}
-
-	for _, comp := range d.Components {
-		for _, cap := range comp.Capabilities {
-			for _, m := range capabilities {
-				if m == cap.Id {
-					result = append(result, DeviceCapabilitiesResult{ComponentId: comp.Id, CapabilityId: cap.Id})
-				}
-			}
-		}
-	}
-
-	return result
 }

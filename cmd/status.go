@@ -36,7 +36,7 @@ var statusCmd = &cobra.Command{
 			log.Fatalf("Error loading configuration: %v", err)
 		}
 
-		client := smartthings.Init(smartthings.NewTransport(config.APIToken), config.ValueMap)
+		client := smartthings.New(config.APIToken)
 		list, err := client.Devices()
 		if err != nil {
 			log.Fatal(err)
@@ -45,7 +45,7 @@ var statusCmd = &cobra.Command{
 		if len(args) == 0 {
 			log.Printf("Listing status of all devices")
 			for i, d := range list.Items {
-				status, _ := d.Status()
+				status, _ := client.DeviceStatus(d.DeviceId)
 				bs, _ := json.Marshal(status)
 
 				fmt.Printf("%d: %s (%s): %v\n", i, d.Label, d.Name, string(bs))

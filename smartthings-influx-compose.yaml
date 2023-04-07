@@ -1,13 +1,16 @@
-apitoken: <put your smartthings api token here>
+apitoken: <put your smartthings api token here or set APITOKEN env var>
 monitor:
-  - light
   - temperatureMeasurement
   - illuminanceMeasurement
   - relativeHumidityMeasurement
   - ultravioletIndex
-period: 120
+smartthings:
+  capabilities:
+    - name: switch
+      time: wall
+period: 10
 influxurl: http://influxdb:8086
-influxuser: admin
+influxuser: user
 influxpassword: password
 influxdatabase: SmartThings
 valuemap:

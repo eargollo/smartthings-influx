@@ -38,7 +38,7 @@ var listCmd = &cobra.Command{
 			log.Fatalf("Error loading configuration: %v", err)
 		}
 
-		client := smartthings.Init(smartthings.NewTransport(config.APIToken), config.ValueMap)
+		client := smartthings.New(config.APIToken)
 		list, err := client.Devices()
 
 		if err != nil {

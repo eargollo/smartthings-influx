@@ -1,4 +1,4 @@
-package smartthings
+package monitor
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 type ConversionMap map[string]map[string]float64
 
-func (c ConversionMap) ConvertValueToFloat(metric string, value any) (float64, error) {
+func (c ConversionMap) Convert(metric string, value any) (float64, error) {
 	_, ok := value.(float64)
 	if ok {
 		return value.(float64), nil

@@ -4,7 +4,7 @@ monitor:
   - illuminanceMeasurement
   - relativeHumidityMeasurement
   - ultravioletIndex
-monitorconfig:
-  light:
-    timeset: call
-
+smartthings:
+  capabilities:
+    - name: temperatureMeasurement
+      time: wall

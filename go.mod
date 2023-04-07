@@ -1,6 +1,6 @@
 module github.com/eargollo/smartthings-influx
 
-go 1.19
+go 1.20
 
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
@@ -8,7 +8,7 @@ require (
 	github.com/influxdata/influxdb v1.11.0
 	github.com/spf13/cobra v1.6.1
 	github.com/spf13/viper v1.15.0
-	github.com/stretchr/testify v1.8.1
+	github.com/stretchr/testify v1.8.2
 )
 
 require (

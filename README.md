@@ -36,7 +36,7 @@ Have fun!
 ```yaml
 apitoken: <put your SmartThings API token here or export APITOKEN env var>
 monitor:
-  - light
+  - switch
   - temperatureMeasurement
   - illuminanceMeasurement
   - relativeHumidityMeasurement
@@ -83,14 +83,14 @@ Using config file: /Users/eduardoargollo/src/eargollo/smartthings-influx/.smartt
 
 If you are getting a similar list then the one above, `smarththings-influx` is working properly. You can even use the data on this list to enhance your configuration and monitor more devices.
 
-If this command is not working, check your APIKEY is correct, with permissions, and placed correctly at the file (replacing the `<put your SmartThings API token here or export APITOKEN env var>` [comment](https://github.com/eargollo/smartthings-influx/blob/master/docker-compose-config.yaml#L1) )
+If this command is not working, check your APIKEY is correct, with permissions, and placed correctly at the file (replacing the `<put your SmartThings API token here or export APITOKEN env var>` [comment](https://github.com/eargollo/smartthings-influx/blob/master/smartthings-influx-compose.yaml#L1) )
 
 
 6. Now you will need to install InfluxDB. The program does not support InfluxDB 2, so install the latest InfluxDB version 1 (at the time of this writing it is the version 1.8.10). There may be packages for your computer platform. For instance you can install it on Mac using homebrew with `brew install influxdb@1.8.10`
 
 1. Run InfluxDB and note the URL, port, user and password for the database installation
 
-1. Update the `.smartthings-influx.yaml` with the InfluxDB configuraiton (Example for a local InfluxDB [here](https://github.com/eargollo/smartthings-influx/blob/master/docker-compose-config.yaml#L9-L12))
+1. Update the `.smartthings-influx.yaml` with the InfluxDB configuraiton (Example for a local InfluxDB [here](https://github.com/eargollo/smartthings-influx/blob/master/smartthings-influx-compose.yaml#L9-L12))
 
 1. Now you can run the monitor command and it should work without errors: `./smartthings-influx monitor` . This means data is being loaded to InfluxDB
 
@@ -101,3 +101,36 @@ You should now be able to see the datapoints and create your Grafana charts.
 Note, all of this has been made and pre-set with the Docker compose at this repository and this could serve you as a guide. Look at the [docker compose](https://github.com/eargollo/smartthings-influx/blob/master/docker-compose.yml) file to validate the components and at (grafana-provisioning folder)[] for the Grafana configuraiton used at the docker compose version. It also has an initial dashboard.
 
 Have fun!
+
+## More configurations
+
+### Set to wall time
+
+You may want to get records to influx based on the time SmartThings API was called 
+instead of the time the sensor made the read. This would add a record at every chosen
+period. 
+
+Right now you can do that to all devices with a specific capability.
+
+Here is an example for the `switch` capability to read at wall time instead of sensor time:
+
+```yaml
+apitoken: <put your SmartThings API token here or export APITOKEN env var>
+monitor:
+  - temperatureMeasurement
+  - illuminanceMeasurement
+  - relativeHumidityMeasurement
+smartthings:
+  capabilities:
+    - name: switch
+      time: wall
+period: 120
+influxurl: http://localhost:8086
+influxuser: user
+influxpassword: password
+influxdatabase: database
+valuemap:
+  switch: 
+    off: 0
+    on: 1
+```

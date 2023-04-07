@@ -1,10 +1,10 @@
-package smartthings
+package monitor
 
 import (
 	"testing"
 )
 
-func TestClient_ConvertValueToFloat(t *testing.T) {
+func TestClient_Convert(t *testing.T) {
 	type args struct {
 		metric string
 		value  any
@@ -59,7 +59,7 @@ func TestClient_ConvertValueToFloat(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.conversionMap.ConvertValueToFloat(tt.args.metric, tt.args.value)
+			got, err := tt.conversionMap.Convert(tt.args.metric, tt.args.value)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Client.ConvertValueToFloat() error = %v, wantErr %v", err, tt.wantErr)
 				return

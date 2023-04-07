@@ -19,7 +19,6 @@ import (
 	"log"
 
 	"github.com/eargollo/smartthings-influx/internal/config"
-	"github.com/eargollo/smartthings-influx/pkg/monitor"
 	"github.com/spf13/cobra"
 )
 
@@ -37,10 +36,7 @@ var monitorCmd = &cobra.Command{
 		}
 
 		// Monitor
-		mon, err := monitor.New(config)
-		if err != nil {
-			log.Fatalf("Error initializing monitor: %v", err)
-		}
+		mon := config.InstantiateMonitor()
 
 		err = mon.Run()
 		if err != nil {

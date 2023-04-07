@@ -7,74 +7,49 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/influxdata/influxdb/client/v2"
-	"github.com/spf13/viper"
 
-	"github.com/eargollo/smartthings-influx/internal/config"
-	"github.com/eargollo/smartthings-influx/pkg/database"
 	"github.com/eargollo/smartthings-influx/pkg/smartthings"
 )
 
 type Monitor struct {
-	config     *config.Config
-	stClient   smartthings.Client
-	dbClient   database.Client
-	lastUpdate map[uuid.UUID]time.Time
-	clock      Clock
+	period       time.Duration
+	client       smartthings.Client
+	recorder     Recorder
+	lastUpdate   map[uuid.UUID]time.Time
+	clock        Clock
+	capabilities map[string]*MonitorCapability
+	converter    ConversionMap
 }
 
-type Clock interface {
-	Now() time.Time
-}
-
-type realClock struct{}
-
-func (realClock) Now() time.Time {
-	return time.Now()
-}
-
-func New(config *config.Config) (*Monitor, error) {
-	mon := Monitor{config: config, clock: realClock{}}
-
-	// SmartThings client if token is set
-	if config.APIToken != "" {
-		mon.stClient = smartthings.Init(smartthings.NewTransport(config.APIToken), config.ValueMap)
-	}
-
-	// dbClient
-	if config.InfluxURL != "" {
-		c, err := client.NewHTTPClient(client.HTTPConfig{
-			Addr:     viper.GetString("influxurl"),
-			Username: viper.GetString("influxuser"),
-			Password: viper.GetString("influxpassword"),
-		})
-
-		mon.dbClient = database.NewInfluxDBClient(c, config.InfluxDatabase)
-		if err != nil {
-			return &mon, err
-		}
+// New creates a new monitor that will add read data from the client
+// and add to the recorder. If no recorder is passed as options
+// stdout is used.
+func New(opts ...MonitorOption) *Monitor {
+	// Monitor with defaults
+	mon := &Monitor{
+		recorder: &StdOutRecorder{},
+		clock:    &realClock{},
+		period:   10 * time.Second,
 	}
 
 	mon.lastUpdate = make(map[uuid.UUID]time.Time)
+	mon.capabilities = make(map[string]*MonitorCapability)
 
-	return &mon, nil
-}
+	for _, opt := range opts {
+		opt(mon)
+	}
 
-func (mon *Monitor) SetClock(clock Clock) {
-	mon.clock = clock
+	return mon
 }
 
 func (mon Monitor) Run() error {
-	if mon.dbClient == nil {
-		return fmt.Errorf("Can't monitor cause database is not set")
-	}
-
-	duration := time.Duration(0) // Cheap trick not to sleep at the first round
+	// Cheap trick not to sleep at the first round
+	duration := time.Duration(0)
 
 	for {
 		// Cheap trick not to sleep at the first round
 		time.Sleep(duration)
-		duration = time.Duration(mon.config.Period) * time.Second
+		duration = time.Duration(mon.period)
 		// End of cheap trick
 
 		dataPoints, err := mon.InspectDevices()
@@ -88,12 +63,12 @@ func (mon Monitor) Run() error {
 		newLastUpdate := make(map[uuid.UUID]time.Time)
 
 		if len(dataPoints) == 0 {
-			log.Printf("ERROR: no devices with any of the metrics: %s", strings.Join(mon.config.Monitor, ", "))
+			log.Printf("ERROR: no devices with any of the capabilities: %s", strings.Join(mon.CapabilityNames(), ", "))
 
 			continue
 		}
 
-		updateDataPoints := []database.DeviceDataPoint{}
+		updateDataPoints := []DeviceDataPoint{}
 		// Check which devices measurements were updated since last time
 		for _, dp := range dataPoints {
 			if mon.lastUpdate[dp.DeviceId] != dp.Timestamp {
@@ -106,7 +81,7 @@ func (mon Monitor) Run() error {
 		}
 
 		if len(updateDataPoints) > 0 {
-			err = mon.dbClient.Save(updateDataPoints)
+			err = mon.recorder.Add(updateDataPoints)
 			if err != nil {
 				log.Printf("Monitor got error writing point: %v", err)
 			} else {
@@ -120,28 +95,31 @@ func (mon Monitor) Run() error {
 	}
 }
 
-func (mon Monitor) InspectDevices() ([]database.DeviceDataPoint, error) {
-	dataPoints := []database.DeviceDataPoint{}
+func (mon Monitor) InspectDevices() ([]DeviceDataPoint, error) {
+	currentTime := mon.clock.Now()
+	dataPoints := []DeviceDataPoint{}
 
-	if mon.stClient == nil {
+	if mon.client == nil {
 		return dataPoints, fmt.Errorf("Can't connect to SmartThings, client not configured")
 	}
 
 	// List devices with metrics
-	devices, err := mon.stClient.DevicesWithCapabilities(mon.config.Monitor)
+
+	devices, err := mon.DevicesWithCapabilities()
 	if err != nil {
 		return dataPoints, fmt.Errorf("could not list devices %v", err)
 	}
 
-	if len(devices.Items) == 0 {
-		log.Printf("no devices with any of the metrics: %s", strings.Join(mon.config.Monitor, ", "))
+	if len(devices) == 0 {
+		log.Printf("no devices with any of the metrics: %s", strings.Join(mon.CapabilityNames(), ", "))
 		return dataPoints, nil
 	}
 
-	for i, dev := range devices.Items {
-		log.Printf("%d: Monitoring '%s' from device '%s' (%s)", i, dev.CapabilityId, dev.Device.Label, dev.Device.DeviceId)
+	for i, dev := range devices {
+		log.Printf("%d: Monitoring '%s' from device '%s' (%s)", i, dev.CapabilityId, dev.DeviceLabel, dev.DeviceId)
+
 		// Get measurement
-		status, err := dev.Device.CapabilityStatus(dev.ComponentId, dev.CapabilityId)
+		status, err := mon.client.DeviceCapabilityStatus(dev.DeviceId, dev.ComponentId, dev.CapabilityId)
 		if err != nil {
 			log.Printf("ERROR: could not get metric status: %v", err)
 			continue
@@ -154,27 +132,41 @@ func (mon Monitor) InspectDevices() ([]database.DeviceDataPoint, error) {
 			}
 
 			// Get converted value
-			convValue, err := mon.stClient.CapabilityStatusToFloat(key, val)
+			convValue, err := mon.converter.Convert(key, val.Value)
 			if err != nil {
 				log.Printf("ERROR: could not convert to number %v", err)
 				continue
 			}
 
-			log.Printf("Key is %s value %v number value %f", key, val, convValue)
-
 			readTime := val.Timestamp
-			mc, ok := mon.config.MonitorConfig[dev.CapabilityId]
+			mc, ok := mon.capabilities[dev.CapabilityId]
+
+			// log.Printf("Key %s Device ID %s Device %s Component %s Capability %s Value %v number value %f mc %s, ok %v config %v",
+			// 	key,
+			// 	dev.DeviceId,
+			// 	dev.DeviceLabel,
+			// 	dev.ComponentId,
+			// 	dev.CapabilityId,
+			// 	val,
+			// 	convValue,
+			// 	mc,
+			// 	ok,
+			// 	mon.capabilities,
+			// )
+
 			if ok {
-				if mc.TimeSet == config.Call {
-					readTime = mon.clock.Now()
+				if mc.Time == WallTime {
+					readTime = currentTime
+					log.Printf("Device %s is set to wall time. Device read time %s replaced bt %s.",
+						dev.DeviceLabel, val.Timestamp.String(), readTime.String())
 				}
 			}
 
 			// Create point
-			point := database.DeviceDataPoint{
+			point := DeviceDataPoint{
 				Key:        key,
-				DeviceId:   dev.Device.DeviceId,
-				Device:     dev.Device.Label,
+				DeviceId:   dev.DeviceId,
+				Device:     dev.DeviceLabel,
 				Component:  dev.ComponentId,
 				Capability: dev.CapabilityId,
 				Unit:       val.Unit,
@@ -184,12 +176,47 @@ func (mon Monitor) InspectDevices() ([]database.DeviceDataPoint, error) {
 
 			dataPoints = append(dataPoints, point)
 		}
-
 	}
 
 	return dataPoints, nil
 }
 
-func (mon *Monitor) SetTransport(transport smartthings.Transport) {
-	mon.stClient = smartthings.Init(transport, mon.config.ValueMap)
+type deviceWithCapability struct {
+	DeviceId     uuid.UUID
+	DeviceLabel  string
+	ComponentId  string
+	CapabilityId string
+}
+
+func (mon Monitor) DevicesWithCapabilities() ([]deviceWithCapability, error) {
+	list := []deviceWithCapability{}
+
+	devices, err := mon.client.Devices()
+	if err != nil {
+		return list, err
+	}
+
+	for _, d := range devices.Items {
+		for _, comp := range d.Components {
+			for _, cap := range comp.Capabilities {
+				_, ok := mon.capabilities[cap.Id]
+				if ok {
+					// Capability is being monitored
+					list = append(list, deviceWithCapability{DeviceId: d.DeviceId, DeviceLabel: d.Label, ComponentId: comp.Id, CapabilityId: cap.Id})
+				}
+			}
+		}
+	}
+
+	return list, nil
+}
+
+func (mon Monitor) CapabilityNames() []string {
+	names := []string{}
+
+	for k := range mon.capabilities {
+		names = append(names, k)
+	}
+
+	return names
 }
