@@ -1,3 +1,5 @@
+VERSION=$(shell git describe --tags)
+
 .PHONY: build
 build:
 	CGO_ENABLED=0 go build -ldflags "-extldflags=-static" .
@@ -36,6 +38,9 @@ outdated:
 
 .PHONY: release
 release:
+	@echo publishing '$(VERSION)'
+	docker buildx build --platform linux/amd64,linux/arm64 --push -t eargollo/smartthings-influx:$(VERSION) .
+	@echo publishing latest
 	docker buildx build --platform linux/amd64,linux/arm64 --push -t eargollo/smartthings-influx .
 
 .PHONY: docker
