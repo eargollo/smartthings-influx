@@ -56,6 +56,36 @@ func TestClient_Convert(t *testing.T) {
 			want:    0,
 			wantErr: true,
 		},
+		{
+			name:          "case difference on metric bug #33",
+			conversionMap: map[string]map[string]float64{"carbonmonoxide": {"clear": 0.0, "present": 1.0}},
+			args: args{
+				metric: "carbonMonoxide",
+				value:  "present",
+			},
+			want:    1.0,
+			wantErr: false,
+		},
+		{
+			name:          "case difference on value bug #33",
+			conversionMap: map[string]map[string]float64{"carbonmonoxide": {"clear": 0.0, "present": 1.0}},
+			args: args{
+				metric: "carbonMonoxide",
+				value:  "Present",
+			},
+			want:    1.0,
+			wantErr: false,
+		},
+		{
+			name:          "case difference on value err if non existing",
+			conversionMap: map[string]map[string]float64{"carbonmonoxide": {"clear": 0.0, "present": 1.0}},
+			args: args{
+				metric: "carbonMonoxide",
+				value:  "notthere",
+			},
+			want:    0.0,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
