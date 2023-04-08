@@ -82,6 +82,43 @@ func TestMonitor_InspectDevices(t *testing.T) {
 		nil,
 	)
 
+	test2Obj := new(MockedSTClient)
+
+	test2Obj.On("Devices").Return(
+		smartthings.DevicesList{
+			Items: []smartthings.Device{
+				{
+					DeviceId: id1,
+					Name:     "CarbonMonoxideDetector",
+					Label:    "Smoke/CO Garage",
+					Components: []smartthings.Component{
+						{
+							Id:    "carbonMonoxideDetector",
+							Label: "carbonMonoxideDetector",
+							Capabilities: []smartthings.Capability{
+								{
+									Id:      "carbonMonoxideDetector",
+									Version: 1,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		nil,
+	)
+
+	test2Obj.On("DeviceCapabilityStatus", id1, "carbonMonoxideDetector", "carbonMonoxideDetector").Return(
+		map[string]smartthings.CapabilityStatus{
+			"carbonMonoxide": {
+				Timestamp: ts,
+				Value:     "clear",
+			},
+		},
+		nil,
+	)
+
 	tests := []struct {
 		name    string
 		mon     *monitor.Monitor
@@ -106,6 +143,31 @@ func TestMonitor_InspectDevices(t *testing.T) {
 					Capability: "temperatureMeasurement",
 					Value:      tempValue,
 					Unit:       "C",
+					Timestamp:  ts,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name: "Conversion as in bug #33",
+			mon: monitor.New(
+				monitor.SetClient(test2Obj),
+				monitor.WithPeriod(100*time.Second),
+				monitor.WithConversion(monitor.ConversionMap{
+					"carbonmonoxide": map[string]float64{"clear": 0.0},
+				}),
+				monitor.Capabilities(monitor.MonitorCapabilities{
+					monitor.MonitorCapability{Name: "carbonMonoxideDetector", Time: monitor.SensorTime},
+				}),
+			),
+			want: []monitor.DeviceDataPoint{
+				monitor.DeviceDataPoint{
+					Key:        "carbonMonoxide",
+					DeviceId:   id1,
+					Device:     "Smoke/CO Garage",
+					Component:  "carbonMonoxideDetector",
+					Capability: "carbonMonoxideDetector",
+					Value:      0.0,
 					Timestamp:  ts,
 				},
 			},
