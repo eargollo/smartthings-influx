@@ -16,10 +16,14 @@ jobs:
         run: go get .
       - name: Build
         run: make build
-      - name: Test with Go
-        run: go test -json > TestResults-${{ matrix.go-version }}.json
-      - name: Upload Go test results
-        uses: actions/upload-artifact@v3
-        with:
-          name: Go-results-${{ matrix.go-version }}
-          path: TestResults-${{ matrix.go-version }}.json
+      - name: Test
+        run: make test
+      - name: Coverage
+        run: make cover
+      # - name: Test with Go
+      #   run: go test -json > TestResults.json
+      # - name: Upload Go test results
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: Go-results
+      #     path: TestResults.json
