@@ -21,6 +21,8 @@ jobs:
           go-version: 1.20
           cache: false
       - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: go get ./...
       - name: Install linter
         run: sudo curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./data v1.52.2
         # run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.52.2
