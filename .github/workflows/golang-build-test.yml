@@ -1,4 +1,4 @@
-name: Upload Go test results
+name: Golang build and test
 
 on: [push]
 
