@@ -22,10 +22,10 @@ jobs:
           cache: false
       - uses: actions/checkout@v3
       - name: Install linter
-        run: sudo curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.52.2
+        run: sudo curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ./data v1.52.2
         # run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.52.2
       - name: GolangCI Lint
-        run: golangci-lint run
+        run: ./data/golangci-lint run
 
       # - name: golangci-lint
       #   uses: golangci/golangci-lint-action@v3
