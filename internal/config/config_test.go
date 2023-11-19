@@ -54,7 +54,7 @@ func TestLoad(t *testing.T) {
 }
 
 func TestConfig_InstantiateMonitor(t *testing.T) {
-	influx, err := database.NewInfluxDBClient("http://url", "token", "org", "database")
+	influx, err := database.NewInfluxDBClient("http://url", "token", "org", "bucket")
 	if err != nil {
 		t.Errorf("Could not initialize influx %v", err)
 	}
@@ -138,7 +138,7 @@ func TestConfig_InstantiateMonitor(t *testing.T) {
 				SmartThings:  tt.fields.SmartThings,
 			}
 			if got := c.InstantiateMonitor(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Config.InstantiateMonitor() = %v, want %v", got, tt.want)
+				t.Errorf("Config.InstantiateMonitor() / name='%v':\ngot  %v\nwant %v", tt.name, got, tt.want)
 			}
 		})
 	}
