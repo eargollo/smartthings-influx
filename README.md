@@ -86,11 +86,11 @@ If you are getting a similar list then the one above, `smarththings-influx` is w
 If this command is not working, check your APIKEY is correct, with permissions, and placed correctly at the file (replacing the `<put your SmartThings API token here or export APITOKEN env var>` [comment](https://github.com/eargollo/smartthings-influx/blob/master/smartthings-influx-compose.yaml#L1) )
 
 
-6. Now you will need to install InfluxDB. The program does not support InfluxDB 2, so install the latest InfluxDB version 1 (at the time of this writing it is the version 1.8.10). There may be packages for your computer platform. For instance you can install it on Mac using homebrew with `brew install influxdb@1.8.10`
+6. Now you will need to install InfluxDB. Install the latest InfluxDB version 2 (at the time of this writing it is the version 2.7.4). There may be packages for your computer platform. For instance you can install it on Mac using homebrew with `brew install influxdb@2.7.4`
 
-1. Run InfluxDB and note the URL, port, token, org and bucket for the database installation
+1. Run InfluxDB and note the URL, port, token, org and bucket for the database configuration
 
-1. Update the `.smartthings-influx.yaml` with the InfluxDB configuraiton (Example for a local InfluxDB [here](https://github.com/eargollo/smartthings-influx/blob/master/smartthings-influx-compose.yaml#L9-L12))
+1. Update the `.smartthings-influx.yaml` with the InfluxDB configuration (Example for a local InfluxDB [here](https://github.com/eargollo/smartthings-influx/blob/master/smartthings-influx-compose.yaml))
 
 1. Now you can run the monitor command and it should work without errors: `./smartthings-influx monitor` . This means data is being loaded to InfluxDB
 
@@ -98,7 +98,7 @@ If this command is not working, check your APIKEY is correct, with permissions, 
 
 You should now be able to see the datapoints and create your Grafana charts.
 
-Note, all of this has been made and pre-set with the Docker compose at this repository and this could serve you as a guide. Look at the [docker compose](https://github.com/eargollo/smartthings-influx/blob/master/docker-compose.yml) file to validate the components and at (grafana-provisioning folder)[] for the Grafana configuraiton used at the docker compose version. It also has an initial dashboard.
+Note, all of this has been made and pre-set with the Docker compose at this repository and this could serve you as a guide. Look at the [docker compose](https://github.com/eargollo/smartthings-influx/blob/master/docker-compose.yml) file to validate the components and at [grafana-provisioning folder](https://github.com/eargollo/smartthings-influx/tree/master/grafana-provisioning) for the Grafana configuration used at the docker compose version. It also has an initial dashboard.
 
 Have fun!
 
