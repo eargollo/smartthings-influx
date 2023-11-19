@@ -21,14 +21,14 @@ func TestLoad(t *testing.T) {
 	}{
 		{name: "empty", file: "", want: &Config{}, wantErr: false},
 		{name: "first", file: "testdata/first.yaml", want: &Config{
-			APIToken:       "1",
-			Monitor:        []string{"light", "temperatureMeasurement", "illuminanceMeasurement", "relativeHumidityMeasurement", "ultravioletIndex"},
-			Period:         120,
-			InfluxURL:      "http://localhost:8086",
-			InfluxUser:     "user",
-			InfluxPassword: "password",
-			InfluxDatabase: "database",
-			ValueMap:       map[string]map[string]float64{"switch": map[string]float64{"on": 1, "off": 0}},
+			APIToken:     "1",
+			Monitor:      []string{"light", "temperatureMeasurement", "illuminanceMeasurement", "relativeHumidityMeasurement", "ultravioletIndex"},
+			Period:       120,
+			InfluxURL:    "http://localhost:8086",
+			InfluxToken:  "token",
+			InfluxOrg:    "org",
+			InfluxBucket: "bucket",
+			ValueMap:     map[string]map[string]float64{"switch": map[string]float64{"on": 1, "off": 0}},
 		}, wantErr: false},
 		{name: "second", file: "testdata/second.yaml", want: &Config{
 			Monitor: []string{"light", "temperatureMeasurement", "illuminanceMeasurement", "relativeHumidityMeasurement", "ultravioletIndex"},
@@ -54,20 +54,20 @@ func TestLoad(t *testing.T) {
 }
 
 func TestConfig_InstantiateMonitor(t *testing.T) {
-	influx, err := database.NewInfluxDBClient("http://url", "user", "pass", "database")
+	influx, err := database.NewInfluxDBClient("http://url", "token", "org", "database")
 	if err != nil {
 		t.Errorf("Could not initialize influx %v", err)
 	}
 	type fields struct {
-		APIToken       string
-		Monitor        []string
-		Period         int
-		InfluxURL      string
-		InfluxUser     string
-		InfluxPassword string
-		InfluxDatabase string
-		ValueMap       monitor.ConversionMap
-		SmartThings    SmartThingsConfig
+		APIToken     string
+		Monitor      []string
+		Period       int
+		InfluxURL    string
+		InfluxToken  string
+		InfluxOrg    string
+		InfluxBucket string
+		ValueMap     monitor.ConversionMap
+		SmartThings  SmartThingsConfig
 	}
 	tests := []struct {
 		name   string
@@ -103,12 +103,12 @@ func TestConfig_InstantiateMonitor(t *testing.T) {
 		{
 			name: "all in",
 			fields: fields{APIToken: "token", Monitor: []string{"a", "b", "c"},
-				InfluxURL:      "http://url",
-				InfluxUser:     "user",
-				InfluxPassword: "pass",
-				InfluxDatabase: "database",
-				Period:         360,
-				ValueMap:       map[string]map[string]float64{"switch": {"on": 1, "off": 0}},
+				InfluxURL:    "http://url",
+				InfluxToken:  "token",
+				InfluxOrg:    "org",
+				InfluxBucket: "bucket",
+				Period:       360,
+				ValueMap:     map[string]map[string]float64{"switch": {"on": 1, "off": 0}},
 			},
 			want: monitor.New(
 				monitor.SetClient(smartthings.New("token")),
@@ -127,15 +127,15 @@ func TestConfig_InstantiateMonitor(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			c := &Config{
-				APIToken:       tt.fields.APIToken,
-				Monitor:        tt.fields.Monitor,
-				Period:         tt.fields.Period,
-				InfluxURL:      tt.fields.InfluxURL,
-				InfluxUser:     tt.fields.InfluxUser,
-				InfluxPassword: tt.fields.InfluxPassword,
-				InfluxDatabase: tt.fields.InfluxDatabase,
-				ValueMap:       tt.fields.ValueMap,
-				SmartThings:    tt.fields.SmartThings,
+				APIToken:     tt.fields.APIToken,
+				Monitor:      tt.fields.Monitor,
+				Period:       tt.fields.Period,
+				InfluxURL:    tt.fields.InfluxURL,
+				InfluxToken:  tt.fields.InfluxToken,
+				InfluxOrg:    tt.fields.InfluxOrg,
+				InfluxBucket: tt.fields.InfluxBucket,
+				ValueMap:     tt.fields.ValueMap,
+				SmartThings:  tt.fields.SmartThings,
 			}
 			if got := c.InstantiateMonitor(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Config.InstantiateMonitor() = %v, want %v", got, tt.want)

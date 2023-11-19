@@ -3,9 +3,9 @@ datasources:
   - name: InfluxDB
     type: influxdb
     access: proxy
-    database: SmartThings
-    user: admin
-    password: password
+    bucket: SmartThings
+    token: token
+    org: org
     url: http://influxdb:8086
     isDefault: true
     editable: true

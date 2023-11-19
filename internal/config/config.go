@@ -13,15 +13,15 @@ import (
 )
 
 type Config struct {
-	APIToken       string                `yaml:"apitoken"`
-	Monitor        []string              `yaml:"monitor"`
-	Period         int                   `yaml:"period"`
-	InfluxURL      string                `yaml:"influxurl"`
-	InfluxUser     string                `yaml:"influxuser"`
-	InfluxPassword string                `yaml:"influxpasswword"`
-	InfluxDatabase string                `yaml:"influxdatabase"`
-	ValueMap       monitor.ConversionMap `yaml:"valuemap,omitempty"`
-	SmartThings    SmartThingsConfig     `yaml:"smartthings,omitempty"`
+	APIToken     string                `yaml:"apitoken"`
+	Monitor      []string              `yaml:"monitor"`
+	Period       int                   `yaml:"period"`
+	InfluxURL    string                `yaml:"influxurl"`
+	InfluxToken  string                `yaml:"influxtoken"`
+	InfluxOrg    string                `yaml:"influxorg"`
+	InfluxBucket string                `yaml:"influxbucket"`
+	ValueMap     monitor.ConversionMap `yaml:"valuemap,omitempty"`
+	SmartThings  SmartThingsConfig     `yaml:"smartthings,omitempty"`
 }
 
 type SmartThingsConfig struct {
@@ -81,8 +81,8 @@ func (c *Config) InstantiateMonitor() *monitor.Monitor {
 		parms = append(parms, monitor.Capabilities(caps))
 	}
 
-	if c.InfluxDatabase != "" || c.InfluxPassword != "" || c.InfluxURL != "" || c.InfluxUser != "" {
-		db, err := database.NewInfluxDBClient(c.InfluxURL, c.InfluxUser, c.InfluxPassword, c.InfluxDatabase)
+	if c.InfluxURL != "" || c.InfluxToken != "" || c.InfluxOrg != "" || c.InfluxBucket != "" {
+		db, err := database.NewInfluxDBClient(c.InfluxURL, c.InfluxToken, c.InfluxOrg, c.InfluxBucket)
 		if err != nil {
 			log.Fatalf("could not initialize influx: %v", err)
 		}

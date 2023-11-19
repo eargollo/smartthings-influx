@@ -7,9 +7,9 @@ monitor:
   - ultravioletIndex
 period: 120
 influxurl: http://localhost:8086
-influxuser: user
-influxpassword: password
-influxdatabase: database
+influxtoken: token
+influxorg: org
+influxbucket: bucket
 valuemap:
   switch: 
     off: 0

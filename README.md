@@ -42,11 +42,11 @@ monitor:
   - relativeHumidityMeasurement
 period: 120
 influxurl: http://localhost:8086
-influxuser: user
-influxpassword: password
-influxdatabase: database
+influxtoken: token
+influxorg: org
+influxbucket: bucket
 valuemap:
-  switch: 
+  switch:
     off: 0
     on: 1
 ```
@@ -88,13 +88,13 @@ If this command is not working, check your APIKEY is correct, with permissions, 
 
 6. Now you will need to install InfluxDB. The program does not support InfluxDB 2, so install the latest InfluxDB version 1 (at the time of this writing it is the version 1.8.10). There may be packages for your computer platform. For instance you can install it on Mac using homebrew with `brew install influxdb@1.8.10`
 
-1. Run InfluxDB and note the URL, port, user and password for the database installation
+1. Run InfluxDB and note the URL, port, token, org and bucket for the database installation
 
 1. Update the `.smartthings-influx.yaml` with the InfluxDB configuraiton (Example for a local InfluxDB [here](https://github.com/eargollo/smartthings-influx/blob/master/smartthings-influx-compose.yaml#L9-L12))
 
 1. Now you can run the monitor command and it should work without errors: `./smartthings-influx monitor` . This means data is being loaded to InfluxDB
 
-1. Install [Grafana](https://grafana.com/), run it and configure it to access your InfluxDB. 
+1. Install [Grafana](https://grafana.com/), run it and configure it to access your InfluxDB.
 
 You should now be able to see the datapoints and create your Grafana charts.
 
@@ -106,9 +106,9 @@ Have fun!
 
 ### Set to wall time
 
-You may want to get records to influx based on the time SmartThings API was called 
+You may want to get records to influx based on the time SmartThings API was called
 instead of the time the sensor made the read. This would add a record at every chosen
-period. 
+period.
 
 Right now you can do that to all devices with a specific capability.
 
@@ -126,11 +126,11 @@ smartthings:
       time: wall
 period: 120
 influxurl: http://localhost:8086
-influxuser: user
-influxpassword: password
-influxdatabase: database
+influxtoken: token
+influxorg: org
+influxbucket: bucket
 valuemap:
-  switch: 
+  switch:
     off: 0
     on: 1
 ```
