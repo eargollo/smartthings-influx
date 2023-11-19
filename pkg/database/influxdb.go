@@ -2,45 +2,35 @@ package database
 
 import (
 	"fmt"
-	"log"
 
-	"github.com/avast/retry-go"
 	"github.com/eargollo/smartthings-influx/pkg/monitor"
-	"github.com/influxdata/influxdb/client/v2"
-	influxcli "github.com/influxdata/influxdb/client/v2"
+	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/influxdata/influxdb-client-go/v2/api"
 )
 
 type InfluxDB struct {
-	client   influxcli.HTTPClient
-	database string
+	client    influxdb2.Client
+	write_api api.WriteAPI
 }
 
-func NewInfluxDBClient(url, user, password, database string) (*InfluxDB, error) {
-	c, err := influxcli.NewHTTPClient(client.HTTPConfig{
-		Addr:     url,
-		Username: user,
-		Password: password,
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("could not instantiate http client for influx: %v", err)
+func NewInfluxDBClient(url string, token string, org string, bucket string) (*InfluxDB, error) {
+	c := influxdb2.NewClient(url, token)
+	if c == nil {
+		return nil, fmt.Errorf("could not instantiate client for influx")
 	}
 
-	return &InfluxDB{client: c, database: database}, nil
+	w := c.WriteAPI(org, bucket)
+	if w == nil {
+		return nil, fmt.Errorf("could not instantiate write api for influx")
+	}
+
+	return &InfluxDB{client: c, write_api: w}, nil
 }
 
 func (db InfluxDB) Add(datapoints []monitor.DeviceDataPoint) error {
-	bp, err := influxcli.NewBatchPoints(influxcli.BatchPointsConfig{
-		Database:  db.database,
-		Precision: "s",
-	})
-	if err != nil {
-		return fmt.Errorf("could not initialize points batch: %v", err)
-	}
-
 	for _, dp := range datapoints {
 		// Create point
-		point, err := influxcli.NewPoint(
+		point := influxdb2.NewPoint(
 			dp.Key,
 			map[string]string{
 				"device":     dp.Device,
@@ -53,27 +43,17 @@ func (db InfluxDB) Add(datapoints []monitor.DeviceDataPoint) error {
 			},
 			dp.Timestamp,
 		)
-		if err != nil {
-			return fmt.Errorf("could not create influx point: %v", err)
+		if point == nil {
+			return fmt.Errorf("could not create influx point")
 		}
 
-		bp.AddPoint(point)
+		// Record point
+		// write asynchronously
+		db.write_api.WritePoint(point)
 	}
 
-	if len(bp.Points()) > 0 {
-		// Record points
-		err := retry.Do(func() error {
-			result := db.client.Write(bp)
-			if result != nil {
-				log.Printf("error writing point, will retry: %v", result)
-			}
-			return result
-		})
-
-		if err != nil {
-			return fmt.Errorf("could not write set of points to InfluxDB: %v", err)
-		}
-	}
+	// Force all unwritten data to be sent
+	db.write_api.Flush()
 
 	return nil
 }
