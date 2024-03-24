@@ -1,6 +1,6 @@
 module github.com/eargollo/smartthings-influx
 
-go 1.20
+go 1.22
 
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
