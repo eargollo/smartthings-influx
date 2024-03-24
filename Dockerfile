@@ -1,4 +1,4 @@
-FROM golang:1.21.3 as build
+FROM golang:1.22.1 as build
 RUN apt-get update; apt-get install ca-certificates -y
 WORKDIR /src
 ADD go.mod go.sum /src/

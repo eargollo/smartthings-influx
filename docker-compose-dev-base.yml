@@ -1,14 +1,5 @@
 version: '2'
 services:
-  monitor:
-    image: eargollo/smartthings-influx:latest
-    environment:
-      - APITOKEN
-    volumes:
-      - ./smartthings-influx-compose.yaml:/.smartthings-influx.yaml
-    command: monitor
-    depends_on:
-      - influxdb
   influxdb:
     image: influxdb:2.7
     ports:
@@ -23,18 +14,6 @@ services:
       - DOCKER_INFLUXDB_INIT_ORG=org
       - DOCKER_INFLUXDB_INIT_BUCKET=SmartThings
       - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=token
-  chronograf:
-    image: chronograf:latest
-    ports:
-      - '127.0.0.1:8888:8888'
-    volumes:
-      - ./data/influxdb:/var/lib/chronograf
-    depends_on:
-      - influxdb
-    environment:
-      - INFLUXDB_URL=http://influxdb:8086
-      - INFLUXDB_USERNAME=admin
-      - INFLUXDB_PASSWORD=password
   grafana:
     user: "${UID}:${GID}"
     image: grafana/grafana:latest
