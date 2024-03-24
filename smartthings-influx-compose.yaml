@@ -9,10 +9,12 @@ smartthings:
     - name: switch
       time: wall
 period: 10
-influxurl: http://influxdb:8086
-influxuser: user
-influxpassword: password
-influxdatabase: SmartThings
+database:
+  type: influxdbv2
+  url: http://influxdb:8086
+  token: token
+  org: org
+  bucket: SmartThings
 valuemap:
   switch: 
     off: 0

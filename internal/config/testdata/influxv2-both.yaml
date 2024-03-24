@@ -1,4 +1,4 @@
-apitoken: <put your SmartThings API token here>
+apitoken: TOKEN
 monitor:
   - light
   - temperatureMeasurement
@@ -6,6 +6,10 @@ monitor:
   - relativeHumidityMeasurement
   - ultravioletIndex
 period: 120
+influxurl: http://localhost:8086
+influxuser: user
+influxpassword: password
+influxdatabase: database
 database:
   type: influxdbv2
   url: http://localhost:8086

@@ -1,7 +1,7 @@
 version: '2'
 services:
   monitor:
-    image: eargollo/smartthings-influx:latest
+    build: .
     environment:
       - APITOKEN
     volumes:
@@ -10,19 +10,15 @@ services:
     depends_on:
       - influxdb
   influxdb:
-    image: influxdb:2.7
+    image: influxdb:1.8
     ports:
       - '8086:8086'
     volumes:
-      - ./data/influxdb2-data:/var/lib/influxdb2
-      - ./data/influxdb2-config:/etc/influxdb2
+      - ./data/influxdb:/var/lib/influxdb
     environment:
-      - DOCKER_INFLUXDB_INIT_MODE=setup
-      - DOCKER_INFLUXDB_INIT_USERNAME=admin
-      - DOCKER_INFLUXDB_INIT_PASSWORD=password
-      - DOCKER_INFLUXDB_INIT_ORG=org
-      - DOCKER_INFLUXDB_INIT_BUCKET=SmartThings
-      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=token
+      - INFLUXDB_DB=SmartThings
+      - INFLUXDB_ADMIN_USER=admin
+      - INFLUXDB_ADMIN_PASSWORD=password
   chronograf:
     image: chronograf:latest
     ports:
