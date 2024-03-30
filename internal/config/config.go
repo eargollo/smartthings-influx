@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/eargollo/smartthings-influx/pkg/database"
@@ -21,11 +22,23 @@ type Config struct {
 	InfluxPassword string                `yaml:"influxpasswword"`
 	InfluxDatabase string                `yaml:"influxdatabase"`
 	ValueMap       monitor.ConversionMap `yaml:"valuemap,omitempty"`
+	Database       *DatabaseConfig       `yaml:"influxdbv2,omitempty"`
 	SmartThings    SmartThingsConfig     `yaml:"smartthings,omitempty"`
 }
 
 type SmartThingsConfig struct {
 	Capabilities monitor.MonitorCapabilities `yaml:"capabilities,omitempty"`
+}
+
+type DatabaseConfig struct {
+	Type     string `yaml:"type"`
+	URL      string `yaml:"url"`
+	Token    string `yaml:"token"`
+	Org      string `yaml:"org"`
+	Bucket   string `yaml:"bucket"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+	Database string `yaml:"database"`
 }
 
 func Load(cfgFile string) (*Config, error) {
@@ -81,12 +94,32 @@ func (c *Config) InstantiateMonitor() *monitor.Monitor {
 		parms = append(parms, monitor.Capabilities(caps))
 	}
 
-	if c.InfluxDatabase != "" || c.InfluxPassword != "" || c.InfluxURL != "" || c.InfluxUser != "" {
-		db, err := database.NewInfluxDBClient(c.InfluxURL, c.InfluxUser, c.InfluxPassword, c.InfluxDatabase)
-		if err != nil {
-			log.Fatalf("could not initialize influx: %v", err)
+	if c.Database == nil {
+		// Keeping compatibility with previous configuration file
+		// To be deprecated in the future
+		if c.InfluxDatabase != "" || c.InfluxPassword != "" || c.InfluxURL != "" || c.InfluxUser != "" {
+			db, err := database.NewInfluxDBClient(c.InfluxURL, c.InfluxUser, c.InfluxPassword, c.InfluxDatabase)
+			if err != nil {
+				log.Fatalf("could not initialize influx: %v", err)
+			}
+			parms = append(parms, monitor.SetRecorder(db))
 		}
-		parms = append(parms, monitor.SetRecorder(db))
+	} else {
+		// Database object factory
+		switch strings.ToLower(c.Database.Type) {
+		case "influxdbv2":
+			db, err := database.NewInfluxDBv2Client(c.Database.URL, c.Database.Token, c.Database.Org, c.Database.Bucket)
+			if err != nil {
+				log.Fatalf("could not initialize influx v2: %v", err)
+			}
+			parms = append(parms, monitor.SetRecorder(db))
+		case "influxdbv1":
+			db, err := database.NewInfluxDBClient(c.Database.URL, c.Database.User, c.Database.Password, c.Database.Database)
+			if err != nil {
+				log.Fatalf("could not initialize influx: %v", err)
+			}
+			parms = append(parms, monitor.SetRecorder(db))
+		}
 	}
 
 	if c.Period != 0 {

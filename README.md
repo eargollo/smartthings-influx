@@ -34,17 +34,20 @@ Have fun!
 1. Create the configuration `.smartthings-influx.yaml` file either at your home folder or at the folder where you run the program. Here is a sample of the configuration content:
 
 ```yaml
-apitoken: <put your SmartThings API token here or export APITOKEN env var>
+apitoken: <put your SmartThings API token here or set up an env var>
 monitor:
-  - switch
+  - light
   - temperatureMeasurement
   - illuminanceMeasurement
   - relativeHumidityMeasurement
+  - ultravioletIndex
 period: 120
-influxurl: http://localhost:8086
-influxuser: user
-influxpassword: password
-influxdatabase: database
+database:
+  type: influxdbv2
+  url: http://localhost:8086
+  token: token
+  org: org
+  bucket: bucket
 valuemap:
   switch: 
     off: 0
@@ -86,11 +89,11 @@ If you are getting a similar list then the one above, `smarththings-influx` is w
 If this command is not working, check your APIKEY is correct, with permissions, and placed correctly at the file (replacing the `<put your SmartThings API token here or export APITOKEN env var>` [comment](https://github.com/eargollo/smartthings-influx/blob/master/smartthings-influx-compose.yaml#L1) )
 
 
-6. Now you will need to install InfluxDB. The program does not support InfluxDB 2, so install the latest InfluxDB version 1 (at the time of this writing it is the version 1.8.10). There may be packages for your computer platform. For instance you can install it on Mac using homebrew with `brew install influxdb@1.8.10`
+6. Now you will need to install InfluxDB v2. There may be packages for your computer platform. For instance you can install it on Mac using homebrew with `brew install influxdb`
 
 1. Run InfluxDB and note the URL, port, user and password for the database installation
 
-1. Update the `.smartthings-influx.yaml` with the InfluxDB configuraiton (Example for a local InfluxDB [here](https://github.com/eargollo/smartthings-influx/blob/master/smartthings-influx-compose.yaml#L9-L12))
+1. Update the `.smartthings-influx.yaml` with the InfluxDB configuraiton (Example for a local InfluxDB [here](https://github.com/eargollo/smartthings-influx/blob/master/smartthings-influx-compose.yaml#L12-L17))
 
 1. Now you can run the monitor command and it should work without errors: `./smartthings-influx monitor` . This means data is being loaded to InfluxDB
 
@@ -125,10 +128,12 @@ smartthings:
     - name: switch
       time: wall
 period: 120
-influxurl: http://localhost:8086
-influxuser: user
-influxpassword: password
-influxdatabase: database
+database:
+  type: influxdbv2
+  url: http://localhost:8086
+  token: token
+  org: org
+  bucket: bucket
 valuemap:
   switch: 
     off: 0

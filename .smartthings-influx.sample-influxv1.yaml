@@ -6,12 +6,10 @@ monitor:
   - relativeHumidityMeasurement
   - ultravioletIndex
 period: 120
-database:
-  type: influxdbv2
-  url: http://localhost:8086
-  token: token
-  org: org
-  bucket: bucket
+influxurl: http://localhost:8086
+influxuser: user
+influxpassword: password
+influxdatabase: database
 valuemap:
   switch: 
     off: 0

@@ -38,6 +38,24 @@ func TestLoad(t *testing.T) {
 				},
 			},
 		}, wantErr: false},
+		{name: "influx v2 base", file: "testdata/influxv2-base.yaml", want: &Config{
+			APIToken: "1",
+			Monitor:  []string{"light", "temperatureMeasurement", "illuminanceMeasurement", "relativeHumidityMeasurement", "ultravioletIndex"},
+			Period:   120,
+			Database: &DatabaseConfig{Type: "influxdbv2", URL: "http://localhost:8086", Token: "token", Org: "org", Bucket: "bucket"},
+			ValueMap: map[string]map[string]float64{"switch": map[string]float64{"on": 1, "off": 0}},
+		}, wantErr: false},
+		{name: "influx v2 both", file: "testdata/influxv2-both.yaml", want: &Config{
+			APIToken:       "1",
+			Monitor:        []string{"light", "temperatureMeasurement", "illuminanceMeasurement", "relativeHumidityMeasurement", "ultravioletIndex"},
+			Period:         120,
+			InfluxURL:      "http://localhost:8086",
+			InfluxUser:     "user",
+			InfluxPassword: "password",
+			InfluxDatabase: "database",
+			Database:       &DatabaseConfig{Type: "influxdbv2", URL: "http://localhost:8086", Token: "token", Org: "org", Bucket: "bucket"},
+			ValueMap:       map[string]map[string]float64{"switch": map[string]float64{"on": 1, "off": 0}},
+		}, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -58,35 +76,24 @@ func TestConfig_InstantiateMonitor(t *testing.T) {
 	if err != nil {
 		t.Errorf("Could not initialize influx %v", err)
 	}
-	type fields struct {
-		APIToken       string
-		Monitor        []string
-		Period         int
-		InfluxURL      string
-		InfluxUser     string
-		InfluxPassword string
-		InfluxDatabase string
-		ValueMap       monitor.ConversionMap
-		SmartThings    SmartThingsConfig
-	}
 	tests := []struct {
 		name   string
-		fields fields
+		config *Config
 		want   *monitor.Monitor
 	}{
 		{
 			name:   "defaults",
-			fields: fields{},
+			config: &Config{},
 			want:   monitor.New(),
 		},
 		{
 			name:   "client",
-			fields: fields{APIToken: "token"},
+			config: &Config{APIToken: "token"},
 			want:   monitor.New(monitor.SetClient(smartthings.New("token"))),
 		},
 		{
 			name: "multiple monitors",
-			fields: fields{APIToken: "token", Monitor: []string{"a", "b", "c"},
+			config: &Config{APIToken: "token", Monitor: []string{"a", "b", "c"},
 				SmartThings: SmartThingsConfig{Capabilities: monitor.MonitorCapabilities{
 					monitor.MonitorCapability{Name: "b", Time: monitor.WallTime}}},
 			},
@@ -102,7 +109,7 @@ func TestConfig_InstantiateMonitor(t *testing.T) {
 		},
 		{
 			name: "all in",
-			fields: fields{APIToken: "token", Monitor: []string{"a", "b", "c"},
+			config: &Config{APIToken: "token", Monitor: []string{"a", "b", "c"},
 				InfluxURL:      "http://url",
 				InfluxUser:     "user",
 				InfluxPassword: "pass",
@@ -123,21 +130,30 @@ func TestConfig_InstantiateMonitor(t *testing.T) {
 				monitor.WithConversion(map[string]map[string]float64{"switch": {"on": 1, "off": 0}}),
 			),
 		},
+		{
+			name: "all in",
+			config: &Config{APIToken: "token", Monitor: []string{"a", "b", "c"},
+				Database: &DatabaseConfig{Type: "influxdbv1", URL: "http://url", User: "user", Password: "pass", Database: "database"},
+				Period:   360,
+				ValueMap: map[string]map[string]float64{"switch": {"on": 1, "off": 0}},
+			},
+			want: monitor.New(
+				monitor.SetClient(smartthings.New("token")),
+				monitor.Capabilities(
+					monitor.MonitorCapabilities{
+						monitor.MonitorCapability{Name: "a", Time: monitor.SensorTime},
+						monitor.MonitorCapability{Name: "b", Time: monitor.SensorTime},
+						monitor.MonitorCapability{Name: "c", Time: monitor.SensorTime},
+					}),
+				monitor.WithPeriod(6*time.Minute),
+				monitor.SetRecorder(influx),
+				monitor.WithConversion(map[string]map[string]float64{"switch": {"on": 1, "off": 0}}),
+			), // cant test influx 2 cause it is different at every instantiation
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := &Config{
-				APIToken:       tt.fields.APIToken,
-				Monitor:        tt.fields.Monitor,
-				Period:         tt.fields.Period,
-				InfluxURL:      tt.fields.InfluxURL,
-				InfluxUser:     tt.fields.InfluxUser,
-				InfluxPassword: tt.fields.InfluxPassword,
-				InfluxDatabase: tt.fields.InfluxDatabase,
-				ValueMap:       tt.fields.ValueMap,
-				SmartThings:    tt.fields.SmartThings,
-			}
-			if got := c.InstantiateMonitor(); !reflect.DeepEqual(got, tt.want) {
+			if got := tt.config.InstantiateMonitor(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Config.InstantiateMonitor() = %v, want %v", got, tt.want)
 			}
 		})
