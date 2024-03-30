@@ -1,0 +1,19 @@
+apitoken: <put your smartthings api token here or set APITOKEN env var>
+monitor:
+  - temperatureMeasurement
+  - illuminanceMeasurement
+  - relativeHumidityMeasurement
+  - ultravioletIndex
+smartthings:
+  capabilities:
+    - name: switch
+      time: wall
+period: 10
+influxurl: http://influxdb:8086
+influxuser: admin
+influxpassword: password
+influxdatabase: SmartThings
+valuemap:
+  switch: 
+    off: 0
+    on: 1

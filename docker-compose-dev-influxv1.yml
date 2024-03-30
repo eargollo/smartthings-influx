@@ -5,7 +5,7 @@ services:
     environment:
       - APITOKEN
     volumes:
-      - ./smartthings-influx-compose.yaml:/.smartthings-influx.yaml
+      - ./smartthings-influx-compose-influxv1.yaml:/.smartthings-influx.yaml
     command: monitor
     depends_on:
       - influxdb
@@ -19,18 +19,18 @@ services:
       - INFLUXDB_DB=SmartThings
       - INFLUXDB_ADMIN_USER=admin
       - INFLUXDB_ADMIN_PASSWORD=password
-  chronograf:
-    image: chronograf:latest
-    ports:
-      - '127.0.0.1:8888:8888'
-    volumes:
-      - ./data/influxdb:/var/lib/chronograf
-    depends_on:
-      - influxdb
-    environment:
-      - INFLUXDB_URL=http://influxdb:8086
-      - INFLUXDB_USERNAME=admin
-      - INFLUXDB_PASSWORD=password
+  # chronograf:
+  #   image: chronograf:latest
+  #   ports:
+  #     - '127.0.0.1:8888:8888'
+  #   volumes:
+  #     - ./data/influxdb:/var/lib/chronograf
+  #   depends_on:
+  #     - influxdb
+  #   environment:
+  #     - INFLUXDB_URL=http://influxdb:8086
+  #     - INFLUXDB_USERNAME=admin
+  #     - INFLUXDB_PASSWORD=password
   grafana:
     user: "${UID}:${GID}"
     image: grafana/grafana:latest
