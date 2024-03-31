@@ -139,3 +139,7 @@ valuemap:
     off: 0
     on: 1
 ```
+
+## Migrating to Influx v2
+
+Take a look at the guide [here](docs/migrating-to-influx2.md)
