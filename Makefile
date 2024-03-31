@@ -38,10 +38,14 @@ outdated:
 
 .PHONY: release
 release:
-	@echo publishing '$(VERSION)'
-	docker buildx build --platform linux/amd64,linux/arm64 --push -t eargollo/smartthings-influx:$(VERSION) .
+	@echo publishing '$(VERSION)' for amd64
+	docker build --platform linux/amd64 --push -t eargollo/smartthings-influx:$(VERSION) .
 	@echo publishing latest
-	docker buildx build --platform linux/amd64,linux/arm64 --push -t eargollo/smartthings-influx .
+	docker build --platform linux/amd64 --push -t eargollo/smartthings-influx .
+	@echo publishing '$(VERSION)' for arm64
+	docker build --platform linux/arm64 --push -t eargollo/smartthings-influx:$(VERSION) .
+	@echo publishing latest
+	docker build --platform linux/arm64 --push -t eargollo/smartthings-influx .
 
 .PHONY: docker
 docker:
