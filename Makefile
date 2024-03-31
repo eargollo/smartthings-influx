@@ -38,10 +38,11 @@ outdated:
 
 .PHONY: release
 release:
+	# Requires containerd for pulling and storing images (Settings/General in Docker Desktop)
 	@echo publishing '$(VERSION)'
-	docker buildx build --platform linux/amd64,linux/arm64 --push -t eargollo/smartthings-influx:$(VERSION) .
+	docker build --platform linux/amd64,linux/arm64 --push -t eargollo/smartthings-influx:$(VERSION) .
 	@echo publishing latest
-	docker buildx build --platform linux/amd64,linux/arm64 --push -t eargollo/smartthings-influx .
+	docker build --platform linux/amd64,linux/arm64 --push -t eargollo/smartthings-influx .
 
 .PHONY: docker
 docker:
