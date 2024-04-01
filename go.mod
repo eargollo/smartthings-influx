@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/avast/retry-go v3.0.0+incompatible
-	github.com/google/uuid v1.4.0
+	github.com/google/uuid v1.6.0
 	github.com/influxdata/influxdb v1.11.5
 	github.com/influxdata/influxdb-client-go/v2 v2.3.1-0.20210518120617-5d1fff431040
 	github.com/spf13/cobra v1.8.0
