@@ -7,7 +7,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/influxdata/influxdb v1.11.5
 	github.com/influxdata/influxdb-client-go/v2 v2.13.0
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
 )
